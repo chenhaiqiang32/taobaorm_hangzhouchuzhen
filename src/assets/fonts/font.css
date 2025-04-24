@@ -1,0 +1,18 @@
+@font-face {
+    font-family: "AlibabaPuHuiTi";
+    src: url("./Alibaba-PuHuiTi-Medium.ttf");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "SourceHanSansCN";
+    src: url("./SourceHanSansCN-Regular.otf");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "SIMHEI";
+    src: url("./SIMHEI.TTF");
+    font-weight: normal;
+    font-style: normal;
+}

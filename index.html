@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>矿用井下通风</title>
+    <link rel="stylesheet" href="src/style.css" />
+    <link rel="stylesheet" href="src/assets/fonts/font.css">
+</head>
+
+<body>
+    <canvas tabindex="0"></canvas>
+    <script type="module" src="/src/main.js"></script>
+    <script src="/config.js"></script>
+    <script src="./stomp.min.js"></script>
+    <div id="deviceFan" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis">
+                <span class="IdentifyDomName" title="">XXXX主风机名称sadfasdgfasdgsdgsddgasdgsd</span>
+
+                <div class="shadow"></div>
+            </div>
+            <div class="middle">
+                <div class="left"><img class="deviceImgDom" src="./public/device/fan.png" alt=""></div>
+                <div class="right">
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>状态：</span>
+                        <span class="word IdentifyDomStatus">停止运行</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>风量：</span>
+                        <span class="green IdentifyDomVolume ellipsis neiWidth">150.1测试名字长度测试名字长度</span>
+                        <span class="danwei">m³/min</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>风压：</span>
+                        <span class="green IdentifyDomPressure ellipsis neiWidth">105.3测试名字长度测试名字长度</span>
+                        <span class="danwei">Pa</span>
+                    </div>
+
+                    <div class="button">
+                        <div class="buttonIcon gradient-border-radius changeToLocal"><img src="./device/cameraIcon.png"
+                                alt=""><span>定位</span></div>
+                        <div class="buttonIcon gradient-border-radius changeSystem"><img src="./device/guankong.png"
+                                alt=""><span>管控</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="bottom">
+                <div class="list">
+                    <span class="ellipsis diWidth deviceFirstName">1#风机测试名字长度测试名字长度</span><span>：</span>
+                    <span class="deviceFirstStatus">开</span>
+                </div>
+                <div class="list">
+                    <span class="ellipsis diWidth deviceSecondName">2#风机测试名字长度测试名字长度</span><span>：</span>
+                    <span class="deviceSecondStatus">关</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deviceWindStation" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis">
+                <span class="measureName">XXXX测风名称测试名字长度测试名字长度测试名字长度测试名字长度</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="middle">
+                <div class="left"><img class="deviceImgDom" src="./public/device/ce.png" alt=""></div>
+                <div class="right">
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>状态：</span>
+                        <span class="word measureStatus">运行正常</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>风速：</span>
+                        <span class="green measureSpeed  ellipsis neiWidth">150.1测试名字长度测试名字长度</span>
+                        <span class="danwei">m/s</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>甲烷：</span>
+                        <span class="green measureCh4  ellipsis neiWidth">105.3测试名字长度测试名字长度</span>
+                        <span class="danwei">%CH4</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>一氧化碳：</span>
+                        <span class="green measureCo  ellipsis neiWidth">105.3测试名字长度测试名字长度</span>
+                        <span class="danwei">ppm</span>
+                    </div>
+
+                    <div class="button">
+                        <div class="buttonIcon gradient-border-radius changeToLocal"><img src="./device/cameraIcon.png"
+                                alt=""><span>定位</span></div>
+                        <div class="buttonIcon gradient-border-radius changeSystem"><img src="./device/guankong.png"
+                                alt=""><span>管控</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deviceWindWindow" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis ">
+                <span class="windowName">XXXX风窗名称测试名字长度测试名字长度</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="middle">
+                <div class="left"><img class="deviceImgDom" src="./public/device/window.png" alt=""></div>
+                <div class="right">
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>状态：</span>
+                        <span class="word windowStatus">停止运行</span>
+                    </div>
+
+                    <div class="button">
+                        <div class="buttonIcon gradient-border-radius changeToLocal"><img src="./device/cameraIcon.png"
+                                alt=""><span>定位</span></div>
+                        <div class="buttonIcon gradient-border-radius changeSystem"><img src="./device/guankong.png"
+                                alt=""><span>管控</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="list">
+                    <span class="ellipsis diWidth deviceFirstName">A窗测试名字长度测试名字长度</span><span>：</span><span
+                        class="green windowFirstAngle">0°</span>
+                </div>
+                <div class="list secondWindowHas">
+                    <span class="ellipsis diWidth deviceSecondName">B窗测试名字长度测试名字长度</span><span>：</span><span
+                        class="green windowSecondAngle">90°</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="deviceWindDoor" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis">
+                <span class="doorName">XXXX风门名称测试名字长度测试名字长度测试名字长度测试名字长度</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="middle">
+                <div class="left"><img class="deviceImgDom" src="./public/device/door.png" alt=""></div>
+                <div class="right">
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>状态：</span>
+                        <span class="word doorStatus">连接正常</span>
+                    </div>
+
+                    <div class="button">
+                        <div class="buttonIcon gradient-border-radius changeToLocal"><img src="./device/cameraIcon.png"
+                                alt=""><span>定位</span></div>
+                        <div class="buttonIcon gradient-border-radius changeSystem"><img src="./device/guankong.png"
+                                alt=""><span>管控</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="list"><span
+                        class="deviceFirstName ellipsis diWidth  deviceFirstName">A门测试名字长度测试名字长度</span>：<span
+                        class="deviceFirstStatus">开</span>
+                </div>
+                <div class="list"><span
+                        class="deviceSecondName ellipsis diWidth  deviceFirstName">B门测试名字长度测试名字长度</span>：<span
+                        class="deviceSecondStatus">关</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deviceTunnel" style="display: none;">
+        <div class="deviceDialog">
+            <div class="top ellipsis">
+                <span class="tunnelName">巷道名称sadfasdgfasdgsdgsddgasdgsd</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="middle">
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>风量：</span>
+                    <span class="green volume ellipsis sensorWidth">150.1测试名字长度测试名字长度</span>
+                    <span class="danwei">m³/min</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>风速：</span>
+                    <span class="green speed ellipsis sensorWidth">150.1测试名字长度测试名字长度</span>
+                    <span class="danwei">m/s</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>阻力：</span>
+                    <span class="green resistance ellipsis sensorWidth">150.1测试名字长度测试名字长度</span>
+                    <span class="danwei">Pa</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>长度：</span>
+                    <span class="green length ellipsis sensorWidth">150.1测试名字长度测试名字长度</span>
+                    <span class="danwei">m</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>断面积：</span>
+                    <span class="green crossSectional ellipsis sensorWidth">105.3测试名字长度测试名字长度</span>
+                    <span class="danwei">㎡</span>
+                </div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+        </div>
+    </div>
+
+    <div id="sensor" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis">
+                <span class="tunnelName sensorName">传感器的名称测试名字长度测试名字长度测试名字长度测试名字长度</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="middle">
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>点号：</span>
+                    <span class="green sensorPoint  ellipsis sensorWidth">XXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>HID：</span>
+                    <span class="green HID  ellipsis sensorWidth">XXXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>类型：</span>
+                    <span class="green deviceCategory  ellipsis sensorWidth">XXXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>位置：</span>
+                    <span class="green devicePosition  ellipsis sensorWidth">XXXXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>测值：</span>
+                    <span class="green measureValue  ellipsis sensorWidth">XXXXX测试名字长度测试名字长度</span>
+                    <!-- <span class="danwei">m/s</span> -->
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="button" style="display: none;">
+                    <div class="buttonIcon gradient-border-radius changeToLocal"><img src="./device/cameraIcon.png"
+                            alt=""><span>定位</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="station" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis">
+                <span class="tunnelName stationName">控制器名称测试名字长度测试名字长度测试名字长度测试名字长度</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="middle">
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>状态：</span>
+                    <span class="stationStatus ellipsis sensorWidth">XXXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>点号：</span>
+                    <span class="green stationPoint  ellipsis sensorWidth">XXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>HID：</span>
+                    <span class="green hid  ellipsis sensorWidth">XXXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>IP：</span>
+                    <span class="green ip  ellipsis sensorWidth">XXXXX测试名字长度测试名字长度</span>
+                </div>
+                <div class="list">
+                    <img src="./device/arrow.png" alt="">
+                    <span>位置：</span>
+                    <span class="green stationLocal  ellipsis sensorWidth">XXXXXX测试名字长度测试名字长度</span>
+                </div>
+            </div>
+            <div class="bottom" style="display: none;">
+                <div class="button">
+                    <div class="buttonIcon gradient-border-radius changeToLocal"><img src="./device/cameraIcon.png"
+                            alt=""><span>定位</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="windStation" style="display: none;">
+        <span class="windStationWord">暂无</span>
+    </div>
+    <div id="speedBoard" style="display: none;">
+        风速：<span class="speedBoardInfo" style="color: #1AE3FF;">暂无</span><span style="font-weight: 400;">m/s</span>
+    </div>
+    <div id="nameBoard" style="display: none;">
+        暂无
+    </div>
+    <div id="statusBoard" style="display: none;">
+        暂无
+    </div>
+    <div id="serviceImg" style="display: none;">
+        <img class="serviceImgUrl" src="./icon/101_online.png" alt="">
+    </div>
+    <div id="partFan" style="display: none;">
+        <div class="deviceDialog">
+            <div class="closeDialog"></div>
+            <div class="top ellipsis">
+                <span class="partName">XXXX局扇名称sadfasdgfasdgsdgsddgasdgsd测试名字长度测试名字长度</span>
+                <div class="shadow"></div>
+            </div>
+            <div class="lineImgCommon">
+                <img src="/src/assets/line.png" alt="">
+            </div>
+            <div class="middle">
+                <div class="left"><img class="deviceImgDom" src="./public/device/part.png" alt=""></div>
+                <div class="right">
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>状态：</span>
+                        <span class="word partStatus">运行正常</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>电流：</span>
+                        <span class="green electricValue ellipsis neiWidth">150.1测试名字长度测试名字长度</span>
+                        <span class="danwei">A</span>
+                    </div>
+                    <div class="list">
+                        <img src="./device/arrow.png" alt="">
+                        <span>电压：</span>
+                        <span class="green voltageValue ellipsis neiWidth">105.3测试名字长度测试名字长度</span>
+                        <span class="danwei">V</span>
+                    </div>
+
+                    <div class="button">
+                        <div class="buttonIcon gradient-border-radius changeToLocal">
+                            <img src="./device/cameraIcon.png" alt="">
+                            <span>定位</span>
+                        </div>
+                        <div class="buttonIcon gradient-border-radius  changeSystem">
+                            <img src="./device/guankong.png" alt="">
+                            <span>管控</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom">
+                <div class="list">
+                    <span
+                        class="deviceFirstName ellipsis diWidth  deviceFirstName">1#风机测试名字长度测试名字长度</span><span>：</span>
+                    <span class="deviceFirstStatus">开</span>
+                </div>
+                <div class="list">
+                    <span
+                        class="deviceSecondName ellipsis diWidth  deviceFirstName">2#风机测试名字长度测试名字长度</span><span>：</span>
+                    <span class="deviceSecondStatus">关</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="cabinet" class="cabinet" style="display: none;">
+        <div class="out">
+            <div class="cabinetTitleMain">
+                <div class="cabinetTitle truncate">细磨罐</div>
+            </div>
+            <div class="titleContent">
+                <div class="flexTitleContent">
+                    <div class="cabinetDot"></div>
+                    <div class="equipStatus">正在运行</div>
+                </div>
+                <div class="flexTitleContent">
+                    <img src="./iconLittle.png" alt="">
+                    <span class="workTime">已运行320分钟</span>
+                </div>
+            </div>
+            <div class="mainContent">
+                <!-- <ul>
+                    <li>
+                        <div class="left">电压（范围：218～230）</div>
+                        <div class="right">当前：224V</div>
+                    </li>
+                    <li>
+                        <div class="left">电压（范围：218～230）</div>
+                        <div class="right">当前：224V</div>
+                    </li>
+                    <li>
+                        <div class="left">电压（范围：218～230）</div>
+                        <div class="right">当前：224V</div>
+                    </li>
+                    <li>
+                        <div class="left">电压（范围：218～230）</div>
+                        <div class="right">当前：224V</div>
+                    </li>
+                    <li>
+                        <div class="left">电压（范围：218～230）</div>
+                        <div class="right">当前：224V</div>
+                    </li>
+                </ul> -->
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+<style>
+    #cabinet {
+        width: 382px;
+        min-height: 207px;
+        border-radius: 16px;
+        opacity: 0.8;
+
+        .out {
+            position: relative;
+            width: 100%;
+            height: 100%;
+
+
+            .cabinetTitleMain {
+
+                left: 0;
+                top: 0;
+                background: url('@/assets/bg.png') no-repeat center top;
+                background-size: 100% 100%;
+                position: absolute;
+                width: 381px;
+                height: 34px;
+                padding-left: 29px;
+                line-height: 32px;
+
+                .cabinetTitle {
+                    font-family: "PingFang SC SNaNpxibold";
+                    font-weight: 600;
+                    font-size: 18px;
+                    text-align: left;
+                    color: #c6eaff;
+                    width: 160px;
+                }
+            }
+
+            .titleContent {
+                width: 384px;
+                height: 40px;
+                padding-left: 38.2px;
+                padding-right: 38.2px;
+                position: absolute;
+                top: 40px;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+
+                .flexTitleContent {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center
+                }
+
+                .cabinetDot {
+                    width: 8px;
+                    height: 8px;
+                    background: #47c04c;
+                    border-radius: 50%;
+                    float: left;
+                    margin-right: 4px;
+                }
+
+                .equipStatus {
+                    font-family: "PingFang SC SNaNpxibold";
+                    font-weight: 600;
+                    font-size: 13px;
+                    text-align: left;
+                    color: #46bf4c;
+                    float: left;
+                }
+
+                img {
+                    width: 12px;
+                    height: 12px;
+                    margin-right: 2px;
+                }
+
+                .workTime {
+                    font-family: "PingFang SC SNaNpxibold";
+                    font-weight: 600;
+                    font-size: 13px;
+                    text-align: left;
+                    color: #678398;
+                    margin-left: 4px;
+                }
+            }
+
+            .mainContent {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                width: 378px;
+                height: auto;
+                border-radius: 16px;
+                background: linear-gradient(180.00deg, #1a4872 0%, #0f202f 100%);
+                min-height: 80px;
+                padding-bottom: 30px;
+                z-index: -1;
+                padding-top: 76px;
+
+                ul {
+                    margin: 0;
+                    padding: 0;
+                }
+
+                li {
+                    width: 348px;
+                    height: 28px;
+                    background: #2a445c;
+                    padding: 4px 14px;
+                    list-style: none;
+                    margin: 0 auto;
+                    margin-bottom: 6.8px;
+
+                    .left {
+                        width: 185px;
+                        font-family: "PingFang SC";
+                        font-weight: 400;
+                        font-size: 15px;
+                        text-align: left;
+                        color: #b0c7d5;
+                        float: left;
+                    }
+
+                    .right {
+                        width: 133px;
+                        font-family: "PingFang SC SNaNpxibold";
+                        font-weight: 600;
+                        font-size: 16px;
+                        text-align: left;
+                        color: #9fc7dd;
+                        float: left;
+                    }
+                }
+            }
+        }
+    }
+
+    #serviceImg {
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+
+        & img {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .truncate {
+        white-space: nowrap;
+        /* 文字不换行 */
+        overflow: hidden;
+        /* 隐藏溢出部分 */
+        text-overflow: ellipsis;
+        /* 显示省略号 */
+    }
+
+    #speedBoard {
+        position: absolute;
+        width: 233px;
+        height: 59px;
+        color: #ffffff;
+        background: url('./device/speed.png') no-repeat center center;
+        background-size: cover;
+
+        font-family: SourceHanSansCN;
+        font-weight: bold;
+        font-size: 16px;
+        color: #A8CCEA;
+        line-height: 59px;
+        text-align: left;
+        font-style: normal;
+        text-align: center;
+
+        .speedBoardInfo {
+            margin-right: 8px
+        }
+    }
+
+    #statusBoard {
+        position: absolute;
+        width: 167px;
+        height: 60px;
+        background: url('./device/doorBg.png') no-repeat center center;
+        background-size: cover;
+        font-family: SourceHanSansCN;
+        font-weight: bold;
+        font-size: 20px;
+        text-align: center;
+        line-height: 60px;
+        color: #50D887;
+    }
+
+    #nameBoard {
+        position: absolute;
+        width: 189px;
+        height: 48px;
+        background: url('./device/doorName.png') no-repeat center center;
+        background-size: cover;
+        text-align: center;
+        line-height: 48px;
+
+        font-weight: bold;
+        font-size: 24px;
+        color: #FFFFFF;
+        text-align: center;
+        font-style: normal;
+    }
+
+    #windStation {
+        width: 192px;
+        height: 68px;
+
+        & span {
+            color: #e01414;
+            font-size: 14px;
+            /* letter-spacing: 2px; */
+            font-family: SIMHEI;
+            line-height: 1.2;
+            margin: 0;
+            padding: 0;
+            display: inline-block;
+            /* float: left; */
+            width: 100%;
+            height: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+
+        }
+    }
+
+    #deviceFan {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/bg.png') no-repeat center center;
+            background-size: contain;
+            width: 406px;
+            height: 232px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            box-sizing: border-box;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+
+                .left {
+                    width: 160px;
+                    height: 108px;
+                    margin-right: 16px;
+
+                    & img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                .right {
+                    width: auto;
+                    height: 108px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+
+                    .list {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+
+                        .danwei {
+                            font-size: 12px;
+                            text-align: left;
+                            font-style: normal;
+                            margin-left: 4px;
+                        }
+
+                        & img {
+                            width: 9px;
+                            height: 12px;
+                            margin-right: 2px;
+                        }
+
+                        & span {
+                            width: auto;
+                            font-family: SourceHanSansCN;
+                            font-weight: 400;
+                            font-size: 14px;
+                            color: #98C7DF;
+                            line-height: 21px;
+                            text-align: left;
+                            font-style: normal;
+
+                            &.red {
+                                color: #FF5959;
+                                font-family: "AlibabaPuHuiTi";
+
+                            }
+
+                            &.green {
+                                color: #50D887 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.grey {
+                                color: #98BCCE !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+                        }
+                    }
+
+                    .button {
+                        display: flex;
+                        flex-direction: row;
+
+                        .buttonIcon {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: center;
+                            align-items: center;
+                            margin-right: 8px;
+                            width: 63px;
+                            height: 28px;
+                            background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                            border-radius: 4px;
+                            --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                            &:hover {
+                                background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                                cursor: pointer;
+                            }
+
+                            &:active {
+                                background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                                cursor: pointer;
+                            }
+
+                            & img {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            & span {
+                                font-family: SourceHanSansCN;
+                                font-weight: 400;
+                                font-size: 12px;
+                                color: #FFFFFF;
+                                line-height: 28px;
+                                text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                                text-align: left;
+                                font-style: normal;
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row;
+                width: auto;
+                font-family: SourceHanSansCN;
+                font-weight: 400;
+                font-size: 14px;
+                color: #98C7DF;
+                line-height: 21px;
+                text-align: left;
+                font-style: normal;
+                margin-top: 12px;
+
+                .list {
+                    margin-right: 32px;
+
+                    & span {
+                        display: block;
+                        float: left;
+                    }
+
+                    .green {
+                        color: #50D887 !important;
+                        font-family: "AlibabaPuHuiTi";
+                    }
+                }
+            }
+        }
+    }
+
+    #partFan {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/bg.png') no-repeat center center;
+            background-size: contain;
+            width: 406px;
+            height: 232px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            box-sizing: border-box;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+
+                .left {
+                    width: 160px;
+                    height: 108px;
+                    margin-right: 16px;
+
+                    & img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                .right {
+                    width: auto;
+                    height: 108px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+
+                    .list {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+
+                        .danwei {
+                            font-size: 12px;
+                            text-align: left;
+                            font-style: normal;
+                            margin-left: 4px;
+                        }
+
+                        & img {
+                            width: 9px;
+                            height: 12px;
+                            margin-right: 2px;
+                        }
+
+                        & span {
+                            width: auto;
+                            font-family: SourceHanSansCN;
+                            font-weight: 400;
+                            font-size: 14px;
+                            color: #98C7DF;
+                            line-height: 21px;
+                            text-align: left;
+                            font-style: normal;
+
+                            &.red {
+                                color: #FF5959;
+                                font-family: "AlibabaPuHuiTi";
+
+                            }
+
+                            &.green {
+                                color: #50D887 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.grey {
+                                color: #98BCCE !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+                        }
+                    }
+
+                    .button {
+                        display: flex;
+                        flex-direction: row;
+
+                        .buttonIcon {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: center;
+                            align-items: center;
+                            margin-right: 8px;
+                            width: 63px;
+                            height: 28px;
+                            background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                            border-radius: 4px;
+                            --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                            &:hover {
+                                background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                                cursor: pointer;
+                            }
+
+                            &:active {
+                                background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                                cursor: pointer;
+                            }
+
+                            & img {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            & span {
+                                font-family: SourceHanSansCN;
+                                font-weight: 400;
+                                font-size: 12px;
+                                color: #FFFFFF;
+                                line-height: 28px;
+                                text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                                text-align: left;
+                                font-style: normal;
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row;
+                width: auto;
+                font-family: SourceHanSansCN;
+                font-weight: 400;
+                font-size: 14px;
+                color: #98C7DF;
+                line-height: 21px;
+                text-align: left;
+                font-style: normal;
+                margin-top: 12px;
+
+                .list {
+                    margin-right: 32px;
+
+                    & span {
+                        display: block;
+                        float: left;
+                    }
+
+                    .green {
+                        color: #50D887 !important;
+                        font-family: "AlibabaPuHuiTi";
+                    }
+                }
+            }
+        }
+    }
+
+    #deviceWindStation {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/bg.png') no-repeat center center;
+            background-size: contain;
+            width: 406px;
+            height: 232px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            box-sizing: border-box;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+
+                .left {
+                    width: 160px;
+                    height: 108px;
+                    margin-right: 16px;
+
+                    & img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                .right {
+                    width: auto;
+                    height: 132px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+
+                    .list {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+
+                        .danwei {
+                            font-size: 12px;
+                            text-align: left;
+                            font-style: normal;
+                            margin-left: 4px;
+                        }
+
+                        & img {
+                            width: 9px;
+                            height: 12px;
+                            margin-right: 2px;
+                        }
+
+                        & span {
+                            width: auto;
+                            font-family: SourceHanSansCN;
+                            font-weight: 400;
+                            font-size: 14px;
+                            color: #98C7DF;
+                            line-height: 21px;
+                            text-align: left;
+                            font-style: normal;
+
+                            &.red {
+                                color: #FF5959;
+                                font-family: "AlibabaPuHuiTi";
+
+                            }
+
+                            &.green {
+                                color: #50D887 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.grey {
+                                color: #98BCCE !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+                        }
+                    }
+
+                    .button {
+                        display: flex;
+                        flex-direction: row;
+
+                        .buttonIcon {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: center;
+                            align-items: center;
+                            margin-right: 8px;
+                            width: 63px;
+                            height: 28px;
+                            background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                            border-radius: 4px;
+                            --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                            &:hover {
+                                background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                                cursor: pointer;
+                            }
+
+                            &:active {
+                                background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                                cursor: pointer;
+                            }
+
+                            & img {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            & span {
+                                font-family: SourceHanSansCN;
+                                font-weight: 400;
+                                font-size: 12px;
+                                color: #FFFFFF;
+                                line-height: 28px;
+                                text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                                text-align: left;
+                                font-style: normal;
+                            }
+                        }
+
+                    }
+                }
+
+            }
+        }
+    }
+
+    #deviceWindWindow {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/bg.png') no-repeat center center;
+            background-size: contain;
+            width: 406px;
+            height: 232px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            box-sizing: border-box;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+
+                .left {
+                    width: 160px;
+                    height: 108px;
+                    margin-right: 16px;
+
+                    & img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                .right {
+                    width: auto;
+                    height: 108px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-around;
+
+                    .list {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+
+                        .danwei {
+                            font-size: 12px;
+                            text-align: left;
+                            font-style: normal;
+                            margin-left: 4px;
+                        }
+
+                        & img {
+                            width: 9px;
+                            height: 12px;
+                            margin-right: 2px;
+                        }
+
+                        & span {
+                            width: auto;
+                            font-family: SourceHanSansCN;
+                            font-weight: 400;
+                            font-size: 14px;
+                            color: #98C7DF;
+                            line-height: 21px;
+                            text-align: left;
+                            font-style: normal;
+
+                            &.red {
+                                color: #FF5959;
+                                font-family: "AlibabaPuHuiTi";
+
+                            }
+
+                            &.green {
+                                color: #50D887 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.orange {
+                                color: #e96812 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.grey {
+                                color: #98BCCE !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+                        }
+                    }
+
+                    .button {
+                        display: flex;
+                        flex-direction: row;
+
+                        .buttonIcon {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: center;
+                            align-items: center;
+                            margin-right: 8px;
+                            width: 63px;
+                            height: 28px;
+                            background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                            border-radius: 4px;
+                            --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                            &:hover {
+                                background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                                cursor: pointer;
+                            }
+
+                            &:active {
+                                background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                                cursor: pointer;
+                            }
+
+                            & img {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            & span {
+                                font-family: SourceHanSansCN;
+                                font-weight: 400;
+                                font-size: 12px;
+                                color: #FFFFFF;
+                                line-height: 28px;
+                                text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                                text-align: left;
+                                font-style: normal;
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row;
+                width: auto;
+                font-family: SourceHanSansCN;
+                font-weight: 400;
+                font-size: 14px;
+                color: #98C7DF;
+                line-height: 21px;
+                text-align: left;
+                font-style: normal;
+                margin-top: 12px;
+
+                .list {
+                    margin-right: 32px;
+
+                    & span {
+                        display: block;
+                        float: left;
+                    }
+
+                    .green {
+                        color: #50D887 !important;
+                        font-family: "AlibabaPuHuiTi";
+                    }
+                }
+            }
+        }
+    }
+
+    #deviceWindDoor {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/bg.png') no-repeat center center;
+            background-size: contain;
+            width: 406px;
+            height: 232px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            box-sizing: border-box;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+
+                .left {
+                    width: 160px;
+                    height: 108px;
+                    margin-right: 16px;
+
+                    & img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                .right {
+                    width: auto;
+                    height: 108px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-around;
+
+                    .list {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+
+                        .danwei {
+                            font-size: 12px;
+                            text-align: left;
+                            font-style: normal;
+                            margin-left: 4px;
+                        }
+
+                        & img {
+                            width: 9px;
+                            height: 12px;
+                            margin-right: 2px;
+                        }
+
+                        & span {
+                            width: auto;
+                            font-family: SourceHanSansCN;
+                            font-weight: 400;
+                            font-size: 14px;
+                            color: #98C7DF;
+                            line-height: 21px;
+                            text-align: left;
+                            font-style: normal;
+
+                            &.red {
+                                color: #FF5959;
+                                font-family: "AlibabaPuHuiTi";
+
+                            }
+
+                            &.green {
+                                color: #50D887 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.grey {
+                                color: #98BCCE !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+
+                            &.orange {
+                                color: #e96812 !important;
+                                font-family: "AlibabaPuHuiTi";
+                            }
+                        }
+                    }
+
+                    .button {
+                        display: flex;
+                        flex-direction: row;
+
+                        .buttonIcon {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: center;
+                            align-items: center;
+                            margin-right: 8px;
+                            width: 63px;
+                            height: 28px;
+                            background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                            border-radius: 4px;
+                            --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                            &:hover {
+                                background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                                cursor: pointer;
+                            }
+
+                            &:active {
+                                background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                                cursor: pointer;
+                            }
+
+                            & img {
+                                width: 16px;
+                                height: 16px;
+                            }
+
+                            & span {
+                                font-family: SourceHanSansCN;
+                                font-weight: 400;
+                                font-size: 12px;
+                                color: #FFFFFF;
+                                line-height: 28px;
+                                text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                                text-align: left;
+                                font-style: normal;
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row;
+                width: auto;
+                font-family: SourceHanSansCN;
+                font-weight: 400;
+                font-size: 14px;
+                color: #98C7DF;
+                line-height: 21px;
+                text-align: left;
+                font-style: normal;
+                margin-top: 12px;
+
+                .list {
+                    margin-right: 32px;
+
+                    .green {
+                        color: #50D887 !important;
+                        font-family: "AlibabaPuHuiTi";
+                    }
+                }
+            }
+        }
+    }
+
+    #deviceTunnel {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/deviceIconTunnel.png') no-repeat center center;
+            background-size: contain;
+            width: 387px;
+            height: 184px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            padding-bottom: 28px;
+            box-sizing: border-box;
+            justify-content: space-between;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+
+                .list {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    width: 50%;
+                    margin-bottom: 8px;
+
+                    .danwei {
+                        font-size: 12px;
+                        text-align: left;
+                        font-style: normal;
+                        margin-left: 4px;
+                    }
+
+                    & img {
+                        width: 9px;
+                        height: 12px;
+                        margin-right: 2px;
+                    }
+
+                    & span {
+                        width: auto;
+                        font-family: SourceHanSansCN;
+                        font-weight: 400;
+                        font-size: 14px;
+                        color: #98C7DF;
+                        line-height: 21px;
+                        text-align: left;
+                        font-style: normal;
+
+                        &.red {
+                            color: #FF5959;
+                            font-family: "AlibabaPuHuiTi";
+
+                        }
+
+                        &.green {
+                            color: #50D887 !important;
+                            font-family: "AlibabaPuHuiTi";
+                        }
+
+                        &.grey {
+                            color: #98BCCE !important;
+                            font-family: "AlibabaPuHuiTi";
+                        }
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row-reverse;
+
+                .buttonIcon {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+                    margin-right: 8px;
+                    width: 63px;
+                    height: 28px;
+                    background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                    border-radius: 4px;
+                    --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                    &:hover {
+                        background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                        cursor: pointer;
+                    }
+
+                    &:active {
+                        background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                        cursor: pointer;
+                    }
+
+                    & img {
+                        width: 16px;
+                        height: 16px;
+                    }
+
+                    & span {
+                        font-family: SourceHanSansCN;
+                        font-weight: 400;
+                        font-size: 12px;
+                        color: #FFFFFF;
+                        line-height: 28px;
+                        text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                        text-align: left;
+                        font-style: normal;
+                    }
+                }
+            }
+        }
+    }
+
+    #sensor {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/deviceIconTunnel.png') no-repeat center center;
+            background-size: contain;
+            width: 387px;
+            height: 184px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            padding-bottom: 28px;
+            box-sizing: border-box;
+            justify-content: space-between;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+
+                .list {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    width: 50%;
+                    margin-bottom: 8px;
+
+                    .danwei {
+                        font-size: 12px;
+                        text-align: left;
+                        font-style: normal;
+                        margin-left: 4px;
+                    }
+
+                    & img {
+                        width: 9px;
+                        height: 12px;
+                        margin-right: 2px;
+                    }
+
+                    & span {
+                        width: auto;
+                        font-family: SourceHanSansCN;
+                        font-weight: 400;
+                        font-size: 14px;
+                        color: #98C7DF;
+                        line-height: 21px;
+                        text-align: left;
+                        font-style: normal;
+
+                        &.red {
+                            color: #FF5959;
+                            font-family: "AlibabaPuHuiTi";
+
+                        }
+
+                        &.green {
+                            color: #50D887 !important;
+                            font-family: "AlibabaPuHuiTi";
+                        }
+
+                        &.grey {
+                            color: #98BCCE !important;
+                            font-family: "AlibabaPuHuiTi";
+                        }
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row-reverse;
+
+                .buttonIcon {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+                    margin-right: 8px;
+                    width: 63px;
+                    height: 28px;
+                    background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                    border-radius: 4px;
+                    --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                    &:hover {
+                        background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                        cursor: pointer;
+                    }
+
+                    &:active {
+                        background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                        cursor: pointer;
+                    }
+
+                    & img {
+                        width: 16px;
+                        height: 16px;
+                    }
+
+                    & span {
+                        font-family: SourceHanSansCN;
+                        font-weight: 400;
+                        font-size: 12px;
+                        color: #FFFFFF;
+                        line-height: 28px;
+                        text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                        text-align: left;
+                        font-style: normal;
+                    }
+                }
+            }
+        }
+    }
+
+    #station {
+        position: absolute;
+
+        .deviceDialog {
+            background: url('./device/deviceIconTunnel.png') no-repeat center center;
+            background-size: contain;
+            width: 387px;
+            height: 184px;
+            display: flex;
+            flex-direction: column;
+            padding-top: 28px;
+            padding-left: 36px;
+            padding-bottom: 28px;
+            box-sizing: border-box;
+            justify-content: space-between;
+
+            .top {
+                width: 300px;
+                height: auto;
+                font-family: SourceHanSansCN;
+                font-weight: bold;
+                font-size: 18px;
+                color: #C9C9C9;
+                line-height: 27px;
+                text-align: left;
+                font-style: normal;
+                position: relative;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 8px;
+                background-image: linear-gradient(180deg, #ffffff 30%, #10c4f0 100%);
+
+                .shadow {
+                    position: absolute;
+                    left: 0;
+                    bottom: 2px;
+                    width: 187px;
+                    height: 4px;
+                    background: linear-gradient(270deg, rgba(55, 114, 196, 0) 0%, #318CC3 100%);
+                }
+
+            }
+
+            .middle {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+
+                .list {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    width: 50%;
+                    margin-bottom: 8px;
+
+                    .danwei {
+                        font-size: 12px;
+                        text-align: left;
+                        font-style: normal;
+                        margin-left: 4px;
+                    }
+
+                    & img {
+                        width: 9px;
+                        height: 12px;
+                        margin-right: 2px;
+                    }
+
+                    & span {
+                        width: auto;
+                        font-family: SourceHanSansCN;
+                        font-weight: 400;
+                        font-size: 14px;
+                        color: #98C7DF;
+                        line-height: 21px;
+                        text-align: left;
+                        font-style: normal;
+
+                        &.red {
+                            color: #FF5959;
+                            font-family: "AlibabaPuHuiTi";
+
+                        }
+
+                        &.green {
+                            color: #50D887 !important;
+                            font-family: "AlibabaPuHuiTi";
+                        }
+
+                        &.grey {
+                            color: #98BCCE !important;
+                            font-family: "AlibabaPuHuiTi";
+                        }
+                    }
+                }
+
+            }
+
+            .bottom {
+                display: flex;
+                flex-direction: row-reverse;
+
+                .buttonIcon {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+                    margin-right: 8px;
+                    width: 63px;
+                    height: 28px;
+                    background: linear-gradient(180deg, #3399FF 0%, #215A9D 100%);
+                    border-radius: 4px;
+                    --border-color: linear-gradient(180deg, rgba(146, 209, 251, 1), rgba(50, 129, 167, 1));
+
+                    &:hover {
+                        background: linear-gradient(180deg, #6BB4FB 0%, #4E7CB3 100%);
+                        cursor: pointer;
+                    }
+
+                    &:active {
+                        background: linear-gradient(180deg, #2877C7 0%, #1B4980 100%);
+                        cursor: pointer;
+                    }
+
+                    & img {
+                        width: 16px;
+                        height: 16px;
+                    }
+
+                    & span {
+                        font-family: SourceHanSansCN;
+                        font-weight: 400;
+                        font-size: 12px;
+                        color: #FFFFFF;
+                        line-height: 28px;
+                        text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
+                        text-align: left;
+                        font-style: normal;
+                    }
+                }
+            }
+        }
+    }
+
+    .lineImgCommon {
+        width: 112px;
+        height: 128px;
+        position: fixed;
+        left: -108px;
+        top: 50%;
+
+        img {
+            width: 100%;
+            height: 100%;
+
+        }
+    }
+
+    .neiWidth {
+        max-width: 56px !important;
+    }
+
+    .sensorWidth {
+        max-width: 108px !important;
+    }
+
+    .diWidth {
+        float: left;
+        max-width: 100px !important;
+    }
+
+    .closeDialog {
+        width: 24px;
+        height: 24px;
+        background: url('./dom/closeBlue.png') no-repeat center center;
+        background-size: contain;
+        position: absolute;
+        top: 28px;
+        right: 22px;
+
+        &:hover {
+            background: url('./dom/closeHover.png') no-repeat center center;
+            width: 24px;
+            height: 24px;
+            background-size: contain;
+            position: absolute;
+            top: 28px;
+            right: 22px;
+            cursor: pointer;
+        }
+
+        &:active {
+            background: url('./dom/closeOn.png') no-repeat center center;
+            width: 24px;
+            height: 24px;
+            background-size: contain;
+            position: absolute;
+            top: 28px;
+            right: 22px;
+            cursor: pointer;
+        }
+    }
+</style>

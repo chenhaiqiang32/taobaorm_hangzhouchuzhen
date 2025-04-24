@@ -1,0 +1,69 @@
+{
+    "shadow": {
+        "enabled": true
+    },
+    "background": {
+        "sunnyTexture": "./textures/sky/sunny.jpg",
+        "nightCloudyTexture": "./textures/sky/night_cloudy.jpg",
+        "nightTexture": "./textures/sky/night.jpg",
+        "cloudyTexture": "./textures/sky/cloudy.jpg"
+    },
+    "weather": {
+        "level": {
+            "small": 1000,
+            "middle": 3000,
+            "heavy": 8000
+        },
+        "range": {
+            "min": [-200, 0, -200],
+            "max": [200, 200, 200]
+        },
+        "rain": {
+            "speed": 1,
+            "size": 1
+        },
+        "snow": {
+            "speed": 0.2,
+            "size": 1
+        }
+    },
+    "camera": {
+        "position": [50, 50, 50],
+        "sphere": {
+            "center": [0, 0, 0],
+            "radius": 500
+        }
+    },
+    "controls": {
+        "target": [0, 0, 0],
+        "sphere": {
+            "center": [0, 0, 0],
+            "radius": 490
+        }
+    },
+    "ambientLight": {
+        "color": "0xffffff",
+        "intensity": 1.55
+    },
+    "directionalLight": {
+        "color": "0xffffff",
+        "intensity": 3,
+        "position": [10, 130, 200],
+        "target": [0, 0, 0],
+        "castShadow": true,
+        "shadow": {
+            "camera": {
+                "near": 1,
+                "far": 1000,
+                "right": 1000,
+                "left": -1000,
+                "top": 1000,
+                "bottom": -1000
+            },
+            "mapSize": 1024,
+            "blurSamples": 8,
+            "bias": 0,
+            "radius": 1
+        }
+    }
+}

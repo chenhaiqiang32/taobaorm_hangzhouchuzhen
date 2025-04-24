@@ -1,0 +1,199 @@
+*,
+*::before,
+*::after,
+html,
+body,
+#app {
+    /* width: 100%;
+    height: 100%; */
+    margin: 0px;
+    padding: 0px;
+    /* overflow: hidden; */
+    box-sizing: border-box;
+}
+body {
+    background: url("./assets//tunnelBg.jpg") no-repeat left top;
+    background-size: 100% 100%;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+.ellipsis {
+    white-space: nowrap;
+    /* 防止文本换行 */
+    overflow: hidden;
+    /* 隐藏超出容器的内容 */
+    text-overflow: ellipsis;
+    /* 使用省略号表示被截断的文本 */
+}
+
+.gradient-border-radius {
+    position: relative;
+
+    &::after {
+        --m-i: linear-gradient(#000, #000);
+        --m-o: content-box, padding-box;
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        padding: var(--border-width, 1px);
+        border-radius: var(--border-radius, 4px);
+        background-image: var(--border-color);
+        -webkit-mask-image: var(--m-i), var(--m-i);
+        mask-image: var(--m-i), var(--m-i);
+        -webkit-mask-origin: var(--m-o);
+        -webkit-mask-clip: var(--m-o);
+        mask-origin: var(--m-o);
+        mask-clip: var(--m-o);
+        mask-composite: exclude;
+        -webkit-mask-composite: destination-out;
+    }
+}
+
+#css2dRenderer,
+#css3dRenderer {
+    position: absolute;
+    top: 0;
+    height: 0 !important;
+    overflow: initial !important;
+    z-index: 9;
+}
+.ellipse-container {
+    position: relative;
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 8px;
+    /* 根据需要调整 padding 值 */
+    border-radius: 50%;
+    background: rgba(23, 32, 52, 0.4) linear-gradient(180deg, #3b507c 0%, rgba(0, 0, 0, 0.5) 100%);
+    color: #fff;
+    border: 1px solid #4d95ad;
+    bottom: 2px;
+}
+
+.ellipse-container::before {
+    content: attr(data-text);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.beilu_three_Board_text_person {
+    width: auto !important;
+    height: auto;
+    padding: 4px 16px;
+    background: rgba(23, 32, 52, 0.4) linear-gradient(180deg, #3b507c 0%, rgba(0, 0, 0, 0.5) 100%);
+    white-space: nowrap;
+    display: inline-block;
+    /* box-shadow: inset 0px 0px 5px 0px rgba(13, 10, 0, 0.7);
+		border-radius: 1px; */
+    position: absolute;
+    letter-spacing: 2px;
+    border: 1px solid #4d95ad;
+    transform: translate(-50%, -50%) scale(1);
+    /* border-image: linear-gradient(180deg, rgba(233, 255, 253, 1), rgba(47, 215, 193, 1), rgba(8, 106, 93, 1), rgba(18, 107, 105, 1), rgba(47, 211, 215, 1)) 1 1; */
+    font-size: 8px;
+    font-family: YouSheBiaoTiHei;
+    color: #ffffff;
+    line-height: 12px;
+    bottom: 24px;
+    text-shadow: 0px 0px 5px #55a7c2;
+}
+
+.beilu_three_Board_text_person_top {
+    width: 33px;
+    height: 1px;
+    background: #40c5f1;
+
+    left: 50%;
+    margin-left: -16.5px;
+    position: absolute;
+    top: -1.2px;
+}
+
+.beilu_three_Board_text_person_bottom {
+    background: url("../public/textures/orientation/titleTop.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: left center;
+    width: 19px;
+    height: 4px;
+    left: 50%;
+    margin-left: -9.5px;
+    position: absolute;
+    bottom: -2.8px;
+}
+
+.beilu_three_Board_text_person_bottom_down {
+    background: url("../public/textures/orientation/titleBottom.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: left center;
+    width: 14px;
+    height: 6px;
+    position: absolute;
+    left: 50%;
+    margin-left: -7px;
+    bottom: -12px;
+}
+
+.labelEntity-container {
+    bottom: -10px;
+}
+
+.labelEntity {
+    display: inline-block;
+    width: 140px;
+    height: 52px;
+    background: url('@/assets/titleBg.png') no-repeat left top;
+    background-size: cover;
+    font-family: Alimama ShuHeiTi, Alimama ShuHeiTi;
+    font-weight: bold;
+    font-size: 20px;
+    color: #DFF9FF;
+    line-height: 52px;
+    text-align: center;
+    font-style: normal;
+    text-transform: none;
+}
+
+.labelEntity_down {
+    position: absolute;
+    display: block;
+    transform: translate(-50%, 100%);
+    left: 50%;
+}
+.animateFun{
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    background: rgb(8, 157, 232);
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+.animateFun2 {
+    position: fixed;
+    left: 148px;
+    top: 12px;
+    background: rgb(8, 157, 232);
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+.animateFun3 {
+    position: fixed;
+    left: 288px;
+    top: 12px;
+    background: rgb(8, 157, 232);
+    color: #ffffff;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
