@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as TWEEN from "three/examples/jsm/libs/tween.module";
 import { Subsystem } from "../Subsystem";
 import { dracoLoaderGlb, loadOBJ } from "../../loader";
-import { cabinet_models } from "@/assets/models";
+import { modelsList } from "@/assets/models";
 import { Core3D } from "../..";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -21,15 +21,11 @@ import MemoryManager from "../../../lib/memoryManager";
 import { createCSS2DObject } from "./../../../lib/CSSObject";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { openWebsocket } from "../../../message/websocket";
+import { TweenControls } from "../../../lib/tweenControls";
 
 export const fan = Symbol();
 
-const position = new THREE.Vector3(16.709955120415408, 9.748082022315987, 14.263053804603231);
-const target = new THREE.Vector3(4.3011208309073865, -1.7468282330790723, -0.5738608267187393);
-
 // camera limit SPHERE
-const SPHERE_CAMERA = new THREE.Sphere(new THREE.Vector3(), 88.2);
-const SPHERE_CONTROLS = new THREE.Sphere(new THREE.Vector3(), 88.2);
 
 /**@type {OrbitControls} */
 const controlsParameters = {
@@ -47,9 +43,11 @@ export class HeatSource extends Subsystem {
             this.core.scene.background = e;
             this.core.scene.backgroundRotation.setFromVector3(new THREE.Vector3(0, 0, 0));
         });
-        this.notTransparent = null;
-        this.transparent = null;
-        this.modelsEquip = {};
+        this.tweenControls = new TweenControls(this);
+        this.modelsEquip = {}; // 设备模型 shuju
+        this.buildingModels = {}; // 车间模型 shuju
+        this.jixiebi = {}; // 机械臂模型 shuju
+        this.switchSceneObj = { name: "home", object3d: null }; // 存储的当前切换的对象模型
         this.actionsObj = {};
         this.rotateObj = null;
         this.css2d = this.createDefault();
@@ -133,7 +131,7 @@ export class HeatSource extends Subsystem {
         });
     }
     createDefault() {
-        let changeDom = document.getElementsByClassName("cabinet")[0].cloneNode(true);
+        let changeDom = document.getElementsByClassName("device-info-container")[0].cloneNode(true);
         const css2d = createCSS2DObject(changeDom);
         css2d.center.set(0.5, 1);
         css2d.scale.set(0.1, 0.1, 0.1);
@@ -152,40 +150,29 @@ export class HeatSource extends Subsystem {
         });
     }
     createDom(data) {
-        const { deviceId, equipmentName, model, status, runTime, categories } = data;
-        let changeDom = document.getElementsByClassName("cabinet")[0].cloneNode(true);
-        let titleName = changeDom.getElementsByClassName("cabinetTitle"); // 标题名字
-        let cabinetDot = changeDom.getElementsByClassName("cabinetDot"); // 状态点的
-        let equipStatus = changeDom.getElementsByClassName("equipStatus"); // 状态文字
-        let workTime = changeDom.getElementsByClassName("workTime"); // 运行时长
-        let attributes = changeDom.getElementsByClassName("mainContent"); // 运行时长
+        const { equipmentName, status } = data;
+        let changeDom = document.getElementsByClassName("device-info-container")[0].cloneNode(true);
+        let titleName = changeDom.getElementsByClassName("jiexibiname"); // 标题名字
+        let equipStatus = changeDom.getElementsByClassName("jixiebistatus"); // 状态文字
 
         const statusColor = { 1: "#47C04C", 2: "#FFCC40", 3: "#FF4040" };
         const statusName = { 1: "运行", 2: "关闭", 3: "报警" };
-        titleName[0].innerText = equipmentName + "." + model; // dom元素赋值
-        titleName[0].title = equipmentName + "." + model; // dom元素赋值
-        cabinetDot[0].style.background = statusColor[status] || "#47C04C";
+        titleName[0].innerText = equipmentName; // dom元素赋值
         equipStatus[0].innerText = statusName[status];
         equipStatus[0].style.color = statusColor[status];
-        workTime[0].innerText = "已运行" + runTime + "分钟";
 
-        let ul = document.createElement("ul");
-        attributes[0].append(ul);
-        categories[0].itemData.forEach(child => {
-            ul.innerHTML += `<li><div class="left" title=${child.itemName}(范围：${child.lowAlarmValue}~${child.highAlarmValue})>${child.itemName}(范围：${child.lowAlarmValue}~${child.highAlarmValue})</div><div class="right" title=当前：${child.itemValues}>当前：${child.itemValues}</div></li>`;
-        });
         const css2d = createCSS2DObject(changeDom);
-        css2d.center.set(0.5, 1);
+        css2d.center.set(0.5, 1.48);
         css2d.scale.set(0.1, 0.1, 0.1);
         css2d.rotation.y = -Math.PI / 2;
         return css2d;
     }
 
-    traverFromParent(object3d, array) {
+    traverFromParent(object3d) {
         let hasCocaCola = false;
         let returnData = null;
         object3d.traverseAncestors(child => {
-            if (child.parent !== null && child.parent.name === "Scene") {
+            if (child.type === "device") {
                 returnData = child;
                 hasCocaCola = true;
             }
@@ -195,12 +182,12 @@ export class HeatSource extends Subsystem {
     addEvents() {
         const { clear: clear, intersects } = this.core.raycast("click", Object.values(this.modelsEquip), () => {
             if (intersects.length) {
-                const { hasCocaCola, returnData } = this.traverFromParent(intersects[0].object);
+                let { hasCocaCola, returnData } = this.traverFromParent(intersects[0].object);
                 if (hasCocaCola) {
-                    this.queryFun(returnData.name.split("_")[0]);
+                    this.doHandel({ equipmentName: 234234, status: 234234 }, returnData.name);
+                } else {
+                    this.css2d.visible = false;
                 }
-            } else {
-                this.css2d.visible = false;
             }
         });
         this.raycastEvents.push(clear);
@@ -225,7 +212,6 @@ export class HeatSource extends Subsystem {
                             if (child instanceof THREE.Mesh) {
                                 child.material = child.material.clone();
                                 child.oldMaterial = child.material.clone();
-                                child.material.transparent = true;
                                 child.material.onBeforeCompile = shader => {
                                     shaderModify(shader, {
                                         shader: "pumpModify",
@@ -260,13 +246,19 @@ export class HeatSource extends Subsystem {
     }
 
     handleControls() {
-        this.controls.addEventListener("change", this.limitInSphere);
-        this.camera.position.copy(position);
-        this.controls.target.copy(target);
         Reflect.ownKeys(controlsParameters).forEach(key => {
             this.controls.data[key] = this.controls[key];
             this.controls[key] = controlsParameters[key];
         });
+        const { center, radius } = getBoxAndSphere(this.ground).sphere;
+
+        // Calculate camera position at center + 1.5 * radius
+        const cameraPosition = new THREE.Vector3(center.x + radius * 1.5, center.y + radius * 1, center.z);
+
+        new TWEEN.Tween(this.camera.position).to(cameraPosition, 1000).start();
+
+        // Animate camera target
+        new TWEEN.Tween(this.controls.target).to(center, 1000).start();
     }
 
     resetControls() {
@@ -277,19 +269,12 @@ export class HeatSource extends Subsystem {
         });
     }
 
-    limitInSphere = () => {
-        this.camera.position.clampSphere(SPHERE_CAMERA);
-        this.controls.target.clampSphere(SPHERE_CONTROLS);
-        const { center, radius } = getBoxAndSphere(this.ground).sphere;
-        let distance = this.camera.position.distanceTo(center);
-        this.transparent.visible = distance < 32;
-        this.notTransparent.visible = distance > 32;
-    };
+    limitInSphere = () => {};
 
     async onEnter() {
         this.onRenderQueue.set(fan, this.update);
 
-        await dracoLoaderGlb(cabinet_models, this.onProgress);
+        await dracoLoaderGlb(modelsList, this.onProgress);
 
         this.onLoaded();
     }
@@ -302,7 +287,37 @@ string} name
         if (name === "device") {
             let group = gltf.scene;
             group.children.forEach(child => {
-                if (child.name !== "其他") this.modelsEquip[child.name.split("_")[0]] = child;
+                child.type = "device";
+                this.modelsEquip[child.name] = child;
+            });
+            group.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    child.renderOrder = 0;
+                    child.castShadow = true;
+                }
+            });
+        }
+        if (name === "building") {
+            let group = gltf.scene;
+            this.ground = gltf.scene;
+            let groupNmae = ["机加车间外壳", "压铸车间外壳"];
+            group.children.forEach(child => {
+                if (groupNmae.includes(child.name)) {
+                    this.buildingModels[child.name] = child;
+                }
+            });
+            group.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    child.material = child.material.clone();
+                    child.renderOrder = 1;
+                    child.castShadow = true;
+                }
+            });
+        }
+        if (name === "机械臂") {
+            let group = gltf.scene;
+            group.children.forEach(child => {
+                this.jixiebi[child.name] = child;
             });
             group.traverse(child => {
                 if (child instanceof THREE.Mesh) {
@@ -312,23 +327,12 @@ string} name
             });
         }
         if (name === "地面") {
-            this.ground = gltf.scene;
             gltf.scene.traverse(child => {
                 if (child instanceof THREE.Mesh) {
-                    child.renderOrder = 0;
+                    child.renderOrder = 2;
                     child.receiveShadow = true;
-                    if (child.material.name === "Material.031") {
-                        child.renderOrder = 1;
-                    }
                 }
             });
-            // processingCommonModel(gltf);
-        }
-        if (name === "not_transparent") {
-            this.notTransparent = gltf.scene;
-        }
-        if (name === "transparent") {
-            this.transparent = gltf.scene;
         }
         processingAnimations(gltf, this);
         this.actions.forEach(action => {
@@ -337,6 +341,91 @@ string} name
 
         this._add(gltf.scene);
     };
+    switchScene(obj) {
+        if (obj === this.switchSceneObj.name) {
+            return false;
+        }
+        if (this.switchSceneObj.object3d) {
+            this.changeSceneObjVisible(this.switchSceneObj.object3d, true, obj);
+        }
+        if (!this.buildingModels[obj]) {
+            // 首页
+            this.switchSceneObj.object3d = null;
+            this.switchSceneObj.name = "home";
+            this.handleControls();
+            return false;
+        }
+        if (this.buildingModels[obj]) {
+            this.changeSceneObjVisible(this.buildingModels[obj], false, obj);
+            this.switchSceneObj.object3d = this.buildingModels[obj];
+            this.switchSceneObj.name = obj;
+        }
+    }
+    changeSceneObjVisible(object3d, visible, name) {
+        object3d.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                // Make sure material is transparent
+                child.material.transparent = true;
+
+                // Create tween for opacity
+                const tween = new TWEEN.Tween(child.material).to({ opacity: visible ? 1 : 0 }, 1000).onComplete(() => {
+                    // Set visibility after opacity transition
+                    child.visible = visible;
+                });
+
+                // Start the tween
+                tween.start();
+            }
+        });
+
+        // Handle camera movement
+        if (!visible) {
+            // Calculate center of the object
+            const { center, radius } = getBoxAndSphere(object3d).sphere;
+
+            // Create camera position tween
+            let cameraPosition = new THREE.Vector3(
+                center.x + radius * 1.5, // Offset X
+                center.y + radius, // Offset Y
+                center.z, // Offset Z
+            );
+            // If name is "机加车间外壳", rotate camera position 180 degrees around Y axis
+            if (name === "压铸车间外壳") {
+                let rel = { x: -262.9221109589206, y: 85.37329054298351, z: -22.310934207969385 };
+                new TWEEN.Tween(this.camera.position).to(new THREE.Vector3(rel.x, rel.y, rel.z), 1000).start();
+            } else {
+                new TWEEN.Tween(this.camera.position).to(cameraPosition, 1000).start();
+            }
+            // Animate camera target
+            new TWEEN.Tween(this.controls.target).to(center, 1000).start();
+        }
+    }
+    doHandel(data, deviceId) {
+        // 使用 fetch 调用接口
+        this.tweenControls.changeTo({
+            start: this.camera.position,
+            end: {
+                x: this.modelsEquip[deviceId].position.x + 12,
+                y: this.modelsEquip[deviceId].position.y + 12,
+                z: this.modelsEquip[deviceId].position.z,
+            },
+            duration: 1000,
+        });
+        this.tweenControls.changeTo({
+            start: this.controls.target,
+            end: this.modelsEquip[deviceId].position,
+            duration: 1000,
+            onComplete: () => {
+                if (this.css2d) {
+                    this.css2d.deleteSelf();
+                }
+                this.css2d = this.createDom(data);
+                this.css2d.position.copy(this.modelsEquip[deviceId].position);
+                this.css2d.visible = true;
+                this.add(this.css2d);
+            },
+        });
+    }
     queryFun(deviceId) {
         // 假设我们要从一个公共 API 获取用户数据
         const url = window.configs.baseUrl + `/api/digital/getDeviceDetailById/${deviceId}`;
@@ -354,13 +443,7 @@ string} name
             .then(data => {
                 // 处理获取到的数据
                 if (data.code === 200) {
-                    if (this.css2d) {
-                        this.css2d.deleteSelf();
-                    }
-                    this.css2d = this.createDom(data.data);
-                    this.css2d.position.copy(this.modelsEquip[deviceId].position);
-                    this.css2d.visible = true;
-                    this.add(this.css2d);
+                    this.doHandel(data.data, deviceId);
                 } else {
                     this.css2d.visible = false;
                 }
@@ -441,7 +524,7 @@ string} name
     }
     box() {
         const { center, radius } = getBoxAndSphere(this.ground).sphere;
-        const vec = new THREE.Vector3(radius, radius, radius).multiplyScalar(0.6);
+        const vec = new THREE.Vector3(radius, radius, radius).multiplyScalar(1);
         const position = center.clone().add(vec);
 
         this.addLight(vec, center);

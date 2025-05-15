@@ -24,8 +24,8 @@ export const openMessage = Core3D => {
                     Core3D.beginRender();
                     break;
                 }
-                case "switchDevice": {
-                    Core3D.heatSource.switchDevice(1, 1);
+                case "switchScene": {
+                    Core3D.heatSource.switchScene(event.data.param);
                     break;
                 }
             }

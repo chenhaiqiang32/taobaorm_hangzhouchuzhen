@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>设备信息 UI 仿制</title>
+  <style>
+    body {
+      background: transparent;
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .device-info-container {
+      position: relative;
+      width: 370px;
+      background: linear-gradient(180deg, #1a3a5d 80%, #1a3a5d00 100%);
+      border-radius: 18px;
+      box-shadow: 0 0 30px 10px #3fd6ff, 0 0 0 6px #3fd6ff44 inset;
+      border: 2px solid #3fd6ff;
+      padding: 18px 18px 28px 18px;
+      box-sizing: border-box;
+      overflow: visible;
+    }
+
+    .device-info-title {
+      color: #b8e6ff;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 18px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #3fd6ff88;
+    }
+
+    .device-info-table {
+      width: 100%;
+      background: rgba(20, 40, 70, 0.7);
+      border-radius: 8px;
+      margin-bottom: 18px;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+    }
+
+    .device-info-table td {
+      color: #b8e6ff;
+      font-size: 18px;
+      padding: 6px 0;
+    }
+
+    .device-info-table .label {
+      color: #b8e6ff;
+      font-weight: normal;
+      width: 90px;
+      padding-left: 10px;
+    }
+
+    .device-info-table .value {
+      color: #fff;
+      font-weight: bold;
+      text-align: right;
+      padding-right: 10px;
+    }
+
+    .device-info-table .status {
+      color: #1fffa0;
+      font-weight: bold;
+      text-align: right;
+      padding-right: 10px;
+    }
+
+    .device-info-btn {
+      display: block;
+      width: 160px;
+      margin: 0 auto;
+      padding: 8px 0;
+      background: linear-gradient(180deg, #2b7fff 60%, #1fd6ff 100%);
+      color: #e0f6ff;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 0 12px 2px #3fd6ff88;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      outline: none;
+      text-shadow: 0 0 6px #3fd6ff88;
+    }
+
+    .device-info-btn:hover {
+      background: linear-gradient(180deg, #1fd6ff 60%, #2b7fff 100%);
+      color: #fff;
+    }
+
+    /* 下方蓝色发光连线和圆点 */
+    .device-info-connector {
+      position: absolute;
+      left: 50%;
+      bottom: -60px;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 60px;
+      pointer-events: none;
+    }
+
+    .device-info-connector svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="cabinet" class="device-info-container" style="display: none;">
+    <div class="device-info-title">设备信息</div>
+    <table class="device-info-table">
+      <tr>
+        <td class="label">设备名称:</td>
+        <td class="value">机械臂</td>
+      </tr>
+      <tr>
+        <td class="label">设备状态:</td>
+        <td class="status">运行</td>
+      </tr>
+    </table>
+    <button class="device-info-btn">查看详情</button>
+    <div class="device-info-connector">
+      <svg>
+        <defs>
+          <radialGradient id="dotGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#3fd6ff" stop-opacity="1" />
+            <stop offset="100%" stop-color="#3fd6ff" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <ellipse cx="60" cy="10" rx="55" ry="18" fill="url(#dotGlow)" opacity="0.5" />
+        <rect x="58" y="10" width="4" height="38" fill="#3fd6ff" filter="url(#glow)" />
+        <circle cx="60" cy="50" r="8" fill="#3fd6ff" opacity="0.7" />
+        <circle cx="60" cy="50" r="16" fill="url(#dotGlow)" opacity="0.4" />
+      </svg>
+    </div>
+  </div>
+</body>
+
+</html>

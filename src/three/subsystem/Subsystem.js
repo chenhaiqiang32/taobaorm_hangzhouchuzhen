@@ -1,4 +1,4 @@
-import { GridHelper,AxesHelper,AnimationMixer,AnimationAction,Sphere,PerspectiveCamera } from "three";
+import { GridHelper, AxesHelper, AnimationMixer, AnimationAction, Sphere, PerspectiveCamera } from "three";
 import { SubScene } from "../../three/scene/SubScene";
 import { Core3D } from "..";
 
@@ -8,10 +8,10 @@ export class Subsystem {
      * @param {Core3D} core
      */
     constructor(core) {
-
         //
         this.core = core;
         this.scene = new SubScene();
+        this.scene.name = "Scene";
         this.camera = core.camera;
         this.controls = core.controls;
         this.baseCamera = core.baseCamera;
@@ -37,9 +37,9 @@ export class Subsystem {
      * @param {Sphere} sphere 相机包围球
      * @param {number} [offset=100] 控制器的包围球半径 = sphere.radius - offset
      */
-    setSphere(sphere,offset = 100) {
+    setSphere(sphere, offset = 100) {
         this.cameraLimitSphere = sphere;
-        this.controlsLimitSphere = new Sphere(sphere.center,sphere.radius - offset);
+        this.controlsLimitSphere = new Sphere(sphere.center, sphere.radius - offset);
     }
 
     limitInSphere = () => {
@@ -54,28 +54,25 @@ export class Subsystem {
     };
 
     /**子系统初始化 */
-    init() { }
+    init() {}
 
     /**进入子系统执行的回调函数,涉及加载模型,返回Promise。在此执行的操作，希望在离开场景时取消这些操作，以防止内存泄漏。 */
-    async onEnter() {
-
-    }
+    async onEnter() {}
 
     /**离开子系统执行的回调函数。希望在此取消那些在进入场景时执行的操作，以防止内存泄漏。 */
-    onLeave() {
-    }
+    onLeave() {}
 
     /**子系统模型加载完成执行的回调函数 */
-    onLoaded() { }
+    onLoaded() {}
 
     /**子系统执行在动画帧中函数 */
-    update() { }
+    update() {}
 
     /**子系统添加事件监听 */
-    addEvents() { }
+    addEvents() {}
 
     /**子系统移除事件监听 */
-    removeEvents() { }
+    removeEvents() {}
 
     /**切换子系统灯光（前提是子系统调用了天气模块） */
     changeWeather() {
@@ -107,7 +104,7 @@ export class Subsystem {
      * @param {boolean} state
      * @param {number} code 设备编号
      */
-    setEquipmentState(state,code) {
+    setEquipmentState(state, code) {
         console.log("当前子系统没有设备状态控制");
     }
 
@@ -143,7 +140,8 @@ export class Subsystem {
         this.mixers.forEach(mixer => mixer.update(delta));
     }
 
-    clearMixers() { // 清除动画
+    clearMixers() {
+        // 清除动画
         this.uncaches.forEach(fn => fn());
         this.uncaches.length = 0;
         this.actions.length = 0;
