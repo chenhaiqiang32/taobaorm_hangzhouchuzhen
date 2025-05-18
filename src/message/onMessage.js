@@ -3,6 +3,18 @@ export const openMessage = Core3D => {
     window.onmessage = event => {
         if (event.data && event.data.cmd) {
             switch (event.data.cmd) {
+                case "init": {
+                    Core3D.heatSource.init(event.data.param);
+                    break;
+                }
+                case "updateArmStatus": {
+                    Core3D.heatSource.updateArmStatus(event.data.param);
+                    break;
+                }
+                case "updateDeviceStatus": {
+                    Core3D.heatSource.updateDeviceStatus(event.data.param);
+                    break;
+                }
                 case "deviceManage": {
                     Core3D.deviceManage(event.data.param);
                     break;
@@ -13,7 +25,7 @@ export const openMessage = Core3D => {
                 }
                 case "resetCamera": {
                     // 拉近巷道距离
-                    Core3D.resetCamera(event.data.param);
+                    Core3D.heatSource.handleControls();
                     break;
                 }
                 case "close": {

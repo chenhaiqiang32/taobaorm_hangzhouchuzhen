@@ -220,12 +220,10 @@ function processingAnimations(gltf, system) {
         const mixer = new AnimationMixer(model);
         for (let i = 0; i < animations.length; i++) {
             let animatesName = animations[i].name;
-            let nameId = animatesName.split("_")[0];
-            system.actions.push(mixer.clipAction(animations[i]));
-            if (!system.actionsObj[nameId]) {
-                system.actionsObj[nameId] = [];
+            system.jixiebi[animatesName].action = mixer.clipAction(animations[i]);
+            if (system.webData[animatesName]) {
+                system.changeArmAction(animatesName, system.webData[animatesName].armRun);
             }
-            system.actionsObj[nameId].push(mixer.clipAction(animations[i]));
         }
         system.mixers.push(mixer);
         system.uncaches.push(() => uncache(animations, mixer, model));

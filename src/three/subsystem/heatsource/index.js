@@ -22,6 +22,7 @@ import { createCSS2DObject } from "./../../../lib/CSSObject";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { openWebsocket } from "../../../message/websocket";
 import { TweenControls } from "../../../lib/tweenControls";
+import { postWeb3dDeviceCode } from "../../../message/postMessage";
 
 export const fan = Symbol();
 
@@ -45,8 +46,10 @@ export class HeatSource extends Subsystem {
         });
         this.tweenControls = new TweenControls(this);
         this.modelsEquip = {}; // 设备模型 shuju
+        this.statusColor = { 1: "#f7acbc", 2: "#deab8a", 3: "#444693", 4: "#5f3c23" };
         this.buildingModels = {}; // 车间模型 shuju
         this.jixiebi = {}; // 机械臂模型 shuju
+        this.webData = {}; // 存储的前端推送的数据
         this.switchSceneObj = { name: "home", object3d: null }; // 存储的当前切换的对象模型
         this.actionsObj = {};
         this.rotateObj = null;
@@ -131,7 +134,7 @@ export class HeatSource extends Subsystem {
         });
     }
     createDefault() {
-        let changeDom = document.getElementsByClassName("device-info-container")[0].cloneNode(true);
+        let changeDom = document.getElementsByClassName("device-info-container-box")[0].cloneNode(true);
         const css2d = createCSS2DObject(changeDom);
         css2d.center.set(0.5, 1);
         css2d.scale.set(0.1, 0.1, 0.1);
@@ -151,18 +154,17 @@ export class HeatSource extends Subsystem {
     }
     createDom(data) {
         const { equipmentName, status } = data;
-        let changeDom = document.getElementsByClassName("device-info-container")[0].cloneNode(true);
+        let changeDom = document.getElementsByClassName("device-info-container-box")[0].cloneNode(true);
         let titleName = changeDom.getElementsByClassName("jiexibiname"); // 标题名字
         let equipStatus = changeDom.getElementsByClassName("jixiebistatus"); // 状态文字
 
-        const statusColor = { 1: "#47C04C", 2: "#FFCC40", 3: "#FF4040" };
         const statusName = { 1: "运行", 2: "关闭", 3: "报警" };
         titleName[0].innerText = equipmentName; // dom元素赋值
         equipStatus[0].innerText = statusName[status];
-        equipStatus[0].style.color = statusColor[status];
+        equipStatus[0].style.color = this.statusColor[status];
 
         const css2d = createCSS2DObject(changeDom);
-        css2d.center.set(0.5, 1.48);
+        css2d.center.set(0.5, 1);
         css2d.scale.set(0.1, 0.1, 0.1);
         css2d.rotation.y = -Math.PI / 2;
         return css2d;
@@ -197,43 +199,17 @@ export class HeatSource extends Subsystem {
             () => {
                 if (intersects2.length) {
                     if (this.traverFromParent(intersects2[0].object)) {
-                        Object.values(this.modelsEquip).forEach(child => {
-                            child.traverse(child => {
-                                if (child instanceof THREE.Mesh) {
-                                    if (child.oldMaterial) {
-                                        child.material = child.oldMaterial;
-                                        child.oldMaterial = null;
-                                    }
-                                }
-                            });
-                        });
+                        this.outLineObj = intersects2[0].object;
                         document.body.style.cursor = "pointer";
-                        intersects2[0].object.traverse(child => {
-                            if (child instanceof THREE.Mesh) {
-                                child.material = child.material.clone();
-                                child.oldMaterial = child.material.clone();
-                                child.material.onBeforeCompile = shader => {
-                                    shaderModify(shader, {
-                                        shader: "pumpModify",
-                                        color: fresnelColorBlue["淡紫色"].value,
-                                        shaderName: "base",
-                                    });
-                                };
-                            }
-                        });
+                        this.postprocessing.addOutline(this.outLineObj);
+                    } else {
+                        this.postprocessing.clearAllOutline();
+                        this.outLineObj = null;
                     }
                 } else {
                     document.body.style.cursor = "default";
-                    Object.values(this.modelsEquip).forEach(child => {
-                        child.traverse(child => {
-                            if (child instanceof THREE.Mesh) {
-                                if (child.oldMaterial) {
-                                    child.material = child.oldMaterial;
-                                    child.oldMaterial = null;
-                                }
-                            }
-                        });
-                    });
+                    this.postprocessing.clearAllOutline();
+                    this.outLineObj = null;
                 }
             },
         );
@@ -259,6 +235,7 @@ export class HeatSource extends Subsystem {
 
         // Animate camera target
         new TWEEN.Tween(this.controls.target).to(center, 1000).start();
+        this.css2d.visible = false;
     }
 
     resetControls() {
@@ -289,11 +266,15 @@ string} name
             group.children.forEach(child => {
                 child.type = "device";
                 this.modelsEquip[child.name] = child;
+                if (this.webData[child.name]) {
+                    this.changeDevice(child.name, this.webData[child.name].status);
+                }
             });
             group.traverse(child => {
                 if (child instanceof THREE.Mesh) {
-                    child.renderOrder = 0;
+                    child.renderOrder = 4;
                     child.castShadow = true;
+                    child.material = child.material.clone();
                 }
             });
         }
@@ -309,7 +290,7 @@ string} name
             group.traverse(child => {
                 if (child instanceof THREE.Mesh) {
                     child.material = child.material.clone();
-                    child.renderOrder = 1;
+                    child.renderOrder = 3;
                     child.castShadow = true;
                 }
             });
@@ -317,11 +298,14 @@ string} name
         if (name === "机械臂") {
             let group = gltf.scene;
             group.children.forEach(child => {
-                this.jixiebi[child.name] = child;
+                if (!this.jixiebi[child.name]) {
+                    this.jixiebi[child.name] = {};
+                }
+                this.jixiebi[child.name].model = child;
             });
             group.traverse(child => {
                 if (child instanceof THREE.Mesh) {
-                    child.renderOrder = 0;
+                    child.renderOrder = 4;
                     child.castShadow = true;
                 }
             });
@@ -329,18 +313,74 @@ string} name
         if (name === "地面") {
             gltf.scene.traverse(child => {
                 if (child instanceof THREE.Mesh) {
-                    child.renderOrder = 2;
+                    child.renderOrder = 0;
                     child.receiveShadow = true;
                 }
             });
         }
         processingAnimations(gltf, this);
-        this.actions.forEach(action => {
-            action.play();
-        });
-
         this._add(gltf.scene);
     };
+    init(_array) {
+        // 初始化前端发送数据
+        _array.forEach(child => {
+            this.webData[child.id] = child; // 修改本地数据
+            if (child.isArm) {
+                // 机械臂的
+                if (this.jixiebi[child.id] && this.jixiebi[child.id].action) {
+                    child.armRun ? this.jixiebi[child.id].action.play() : this.jixiebi[child.id].action.stop();
+                }
+                this.changeArmAction(child.id, child.armRun);
+            }
+            this.changeDevice(child.id, child.status);
+        });
+    }
+    updateArmStatus(_array) {
+        // 更新机械臂的状态
+        _array.forEach(child => {
+            const { id, armRun } = child;
+            if (!this.webData[id]) {
+                return console.log("设备没有初始化");
+            }
+            this.webData[id].armRun = armRun; // 修改本地数据
+            this.changeArmAction(id, armRun);
+        });
+    }
+    updateDeviceStatus(_array) {
+        // 更新机械臂的状态
+        _array.forEach(child => {
+            this.webData[child.id].status = child.status; // 修改本地数据
+            this.changeDevice(child.id, child.status);
+        });
+    }
+
+    changeArmAction(id, status) {
+        // 切换机械臂的动作
+        if (this.jixiebi[id] && this.jixiebi[id].action) {
+            status ? this.jixiebi[id].action.play() : this.jixiebi[id].action.stop();
+        }
+    }
+
+    changeDevice(id, status) {
+        let color = this.statusColor[status];
+
+        if (this.modelsEquip[id]) {
+            console.log(this.modelsEquip[id], 4444);
+            this.modelsEquip[id].traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    child.material.onBeforeCompile = shader => {
+                        shaderModify(shader, {
+                            shader: "pumpModify",
+                            color: fresnelColorBlue["淡紫色"].value,
+                            shaderName: "base",
+                        });
+                    };
+                    child.stateMaterial = child.material.clone();
+                }
+            });
+        }
+    }
+
     switchScene(obj) {
         if (obj === this.switchSceneObj.name) {
             return false;
@@ -348,6 +388,7 @@ string} name
         if (this.switchSceneObj.object3d) {
             this.changeSceneObjVisible(this.switchSceneObj.object3d, true, obj);
         }
+        this.css2d.visible = false;
         if (!this.buildingModels[obj]) {
             // 首页
             this.switchSceneObj.object3d = null;
@@ -423,6 +464,7 @@ string} name
                 this.css2d.position.copy(this.modelsEquip[deviceId].position);
                 this.css2d.visible = true;
                 this.add(this.css2d);
+                postWeb3dDeviceCode(deviceId);
             },
         });
     }
@@ -539,10 +581,17 @@ string} name
     /**@param {Core3D} core  */
     update = core => {
         this.updateMixers(core.delta);
-        // if (this.rotateObj) {
-        //     this.rotateObj.rotation.y = this.rotateObj.rotation.y + 0.01;
-        // }
         this.elapsedTime += core.delta;
+
+        // Update shader materials
+        if (this.materialAnimations) {
+            this.materialAnimations.forEach(material => {
+                if (material.uniforms) {
+                    material.uniforms.time.value = this.elapsedTime;
+                }
+            });
+        }
+
         this.boxModelObj && this.boxModelObj.update(this.elapsedTime);
     };
     addLight(dev, center) {

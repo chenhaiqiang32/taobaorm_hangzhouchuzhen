@@ -142,4 +142,8 @@ export class Postprocessing {
             obj.forEach(child => this.clearOutline(child, channel));
         }
     };
+    clearAllOutline = (channel = 1) => {
+        let pass = channel === 1 ? this.outlineEffect1 : this.outlineEffect2;
+        pass.selection.set([]);
+    };
 }

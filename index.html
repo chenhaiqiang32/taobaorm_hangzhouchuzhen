@@ -14,18 +14,21 @@
     <script type="module" src="/src/main.js"></script>
     <script src="/config.js"></script>
     <script src="./stomp.min.js"></script>
-    <div id="cabinet" class="device-info-container" style="display: none;">
-        <div class="device-info-title">设备信息</div>
-        <table class="device-info-table">
-            <tr>
-                <td class="label">设备名称:</td>
-                <td class="value jiexibiname">机械臂</td>
-            </tr>
-            <tr>
-                <td class="label">设备状态:</td>
-                <td class="status jixiebistatus">运行</td>
-            </tr>
-        </table>
+    <div id="cabinet" class="device-info-container-box" style="display: none;">
+        <div class="device-info-container">
+            <div class="device-info-title">设备信息</div>
+            <table class="device-info-table">
+                <tr>
+                    <td class="label">设备名称:</td>
+                    <td class="value jiexibiname">机械臂</td>
+                </tr>
+                <tr>
+                    <td class="label">设备状态:</td>
+                    <td class="status jixiebistatus">运行</td>
+                </tr>
+            </table>
+        </div>
+
         <!-- <button class="device-info-btn">查看详情</button> -->
         <div class="device-info-connector">
             <svg>
@@ -46,8 +49,13 @@
 
 </html>
 <style>
-    .device-info-container {
+    .device-info-container-box {
         position: relative;
+        width: 370px;
+        height: 284px;
+    }
+
+    .device-info-container {
         width: 370px;
         background: linear-gradient(180deg, #1a3a5d 80%, #1a3a5d00 100%);
         border-radius: 18px;
@@ -130,7 +138,6 @@
     .device-info-connector {
         position: absolute;
         left: 50%;
-        bottom: -60px;
         transform: translateX(-50%);
         width: 120px;
         height: 60px;
