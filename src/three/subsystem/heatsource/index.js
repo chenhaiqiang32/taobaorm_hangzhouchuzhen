@@ -46,7 +46,7 @@ export class HeatSource extends Subsystem {
         });
         this.tweenControls = new TweenControls(this);
         this.modelsEquip = {}; // 设备模型 shuju
-        this.statusColor = { 1: "#f7acbc", 2: "#deab8a", 3: "#444693", 4: "#5f3c23" };
+        this.statusColor = { 1: "#33ff33", 2: "#faa755", 3: "#a1a3a6", 4: "#ed1941" };
         this.buildingModels = {}; // 车间模型 shuju
         this.jixiebi = {}; // 机械臂模型 shuju
         this.webData = {}; // 存储的前端推送的数据
@@ -181,7 +181,7 @@ export class HeatSource extends Subsystem {
 
     getDomInfo(titleName, equipStatus, deviceId) {
         const { name, status } = this.webData[deviceId];
-        const statusName = { 1: "运行", 2: "警报", 3: "停机", 4: "故障" };
+        const statusName = { 1: "正常", 2: "警报", 3: "停机", 4: "故障" };
         titleName[0].innerText = name; // dom元素赋值
         equipStatus[0].innerText = statusName[status];
         equipStatus[0].style.color = this.statusColor[status];
