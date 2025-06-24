@@ -76,6 +76,21 @@ export class HeatSource extends Subsystem {
             skinCheck: new THREE.Color(0.2275, 0.9961, 0.7922),
         };
         this.scene.fog = new THREE.FogExp2("ffffff", 0.0001); // 启用雾气
+
+        // 漫游相关属性
+        this.isRoaming = false; // 是否正在漫游
+        this.roamingPath = []; // 漫游路径点
+        this.currentPathIndex = 0; // 当前路径点索引
+        this.roamingSpeed = 0.001; // 漫游速度
+        this.roamingTween = null; // 漫游动画
+        this.originalCameraPosition = null; // 原始相机位置
+        this.originalControlsTarget = null; // 原始控制器目标点
+
+        // 建筑透明度控制
+        this.buildingMaterials = []; // 存储建筑材质
+        this.originalBuildingOpacities = []; // 存储原始透明度
+        this.roamingBuildingOpacity = 0.2; // 漫游时建筑透明度
+
         // this.createDiv();
         openWebsocket(this);
     }
@@ -111,6 +126,135 @@ export class HeatSource extends Subsystem {
         };
         div3.className = "animateFun3";
         document.body.appendChild(div3);
+
+        // 漫游控制按钮
+        let roamingStart = document.createElement("div");
+        roamingStart.innerText = "开始漫游";
+        roamingStart.onclick = () => {
+            this.startRoaming();
+        };
+        roamingStart.className = "roamingFun";
+        roamingStart.style.cssText =
+            "position: fixed; top: 120px; right: 20px; background: #4CAF50; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(roamingStart);
+
+        let roamingStop = document.createElement("div");
+        roamingStop.innerText = "停止漫游";
+        roamingStop.onclick = () => {
+            this.stopRoaming();
+        };
+        roamingStop.className = "roamingFun2";
+        roamingStop.style.cssText =
+            "position: fixed; top: 160px; right: 20px; background: #f44336; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(roamingStop);
+
+        let roamingPause = document.createElement("div");
+        roamingPause.innerText = "暂停漫游";
+        roamingPause.onclick = () => {
+            this.pauseRoaming();
+        };
+        roamingPause.className = "roamingFun3";
+        roamingPause.style.cssText =
+            "position: fixed; top: 200px; right: 20px; background: #ff9800; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(roamingPause);
+
+        let roamingResume = document.createElement("div");
+        roamingResume.innerText = "恢复漫游";
+        roamingResume.onclick = () => {
+            this.resumeRoaming();
+        };
+        roamingResume.className = "roamingFun4";
+        roamingResume.style.cssText =
+            "position: fixed; top: 240px; right: 20px; background: #2196F3; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(roamingResume);
+
+        // 速度控制
+        let speedFast = document.createElement("div");
+        speedFast.innerText = "加速";
+        speedFast.onclick = () => {
+            this.setRoamingSpeed(1.5);
+        };
+        speedFast.className = "speedFun";
+        speedFast.style.cssText =
+            "position: fixed; top: 280px; right: 20px; background: #9C27B0; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(speedFast);
+
+        let speedSlow = document.createElement("div");
+        speedSlow.innerText = "减速";
+        speedSlow.onclick = () => {
+            this.setRoamingSpeed(0.7);
+        };
+        speedSlow.className = "speedFun2";
+        speedSlow.style.cssText =
+            "position: fixed; top: 320px; right: 20px; background: #607D8B; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(speedSlow);
+
+        // 平滑漫游按钮
+        let smoothRoaming = document.createElement("div");
+        smoothRoaming.innerText = "平滑漫游";
+        smoothRoaming.onclick = () => {
+            this.startSmoothRoaming();
+        };
+        smoothRoaming.className = "smoothRoamingFun";
+        smoothRoaming.style.cssText =
+            "position: fixed; top: 360px; right: 20px; background: #E91E63; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(smoothRoaming);
+
+        // 路径可视化按钮
+        let pathVisualization = document.createElement("div");
+        pathVisualization.innerText = "显示路径";
+        pathVisualization.onclick = () => {
+            const pathLine = this.getPathVisualization();
+            if (pathLine) {
+                this.add(pathLine);
+                // 3秒后自动移除
+                setTimeout(() => {
+                    this.remove(pathLine);
+                }, 3000);
+            }
+        };
+        pathVisualization.className = "pathVisualizationFun";
+        pathVisualization.style.cssText =
+            "position: fixed; top: 400px; right: 20px; background: #795548; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(pathVisualization);
+
+        // 状态显示
+        let statusDisplay = document.createElement("div");
+        statusDisplay.id = "roamingStatus";
+        statusDisplay.style.cssText =
+            "position: fixed; top: 440px; right: 20px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 1000;";
+        document.body.appendChild(statusDisplay);
+
+        // 建筑透明度控制按钮
+        let buildingTransparent = document.createElement("div");
+        buildingTransparent.innerText = "建筑透明";
+        buildingTransparent.onclick = () => {
+            this.setBuildingOpacity(0.2, 1000);
+        };
+        buildingTransparent.className = "buildingTransparentFun";
+        buildingTransparent.style.cssText =
+            "position: fixed; top: 480px; right: 20px; background: #00BCD4; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(buildingTransparent);
+
+        let buildingOpaque = document.createElement("div");
+        buildingOpaque.innerText = "建筑不透明";
+        buildingOpaque.onclick = () => {
+            this.restoreBuildingOpacity(1000);
+        };
+        buildingOpaque.className = "buildingOpaqueFun";
+        buildingOpaque.style.cssText =
+            "position: fixed; top: 520px; right: 20px; background: #FF5722; color: white; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 1000;";
+        document.body.appendChild(buildingOpaque);
+
+        // 定期更新状态显示
+        setInterval(() => {
+            const status = this.getRoamingStatus();
+            statusDisplay.innerHTML = `
+                漫游状态: ${status.isRoaming ? "进行中" : "停止"}<br>
+                当前点: ${status.currentIndex}/${status.totalPoints}<br>
+                速度: ${status.speed.toFixed(2)}
+            `;
+        }, 1000);
     }
     controlsAnimate(id, status) {
         // 0:关闭 1:开启 -1:暂停
@@ -252,12 +396,12 @@ export class HeatSource extends Subsystem {
         const { center, radius } = getBoxAndSphere(this.ground).sphere;
 
         // Calculate camera position at center + 1.5 * radius
-        const cameraPosition = new THREE.Vector3(center.x, center.y + radius * 1, center.z + radius * 1.5);
+        const cameraPosition = new THREE.Vector3(center.x + radius, center.y + radius * 1, center.z + radius * 1.5);
 
         new TWEEN.Tween(this.camera.position).to(cameraPosition, 1000).start();
 
         // Animate camera target
-        new TWEEN.Tween(this.controls.target).to(center, 1000).start();
+        new TWEEN.Tween(this.controls.target).to(new THREE.Vector3(center.x - 32, center.y, center.z), 1000).start();
         this.css2d.visible = false;
     }
 
@@ -315,6 +459,16 @@ string} name
                     child.material = child.material.clone();
                     child.renderOrder = 3;
                     child.castShadow = true;
+
+                    // 收集建筑材质用于透明度控制
+                    if (child.material) {
+                        this.buildingMaterials.push(child.material);
+                        this.originalBuildingOpacities.push(child.material.opacity || 1.0);
+
+                        // 确保材质支持透明度
+                        child.material.transparent = true;
+                        child.material.needsUpdate = true;
+                    }
                 }
             });
         }
@@ -422,13 +576,16 @@ string} name
         }
         this.css2d.visible = false;
         if (!this.buildingModels[obj]) {
-            // 首页
+            // 首页 - 移除射线事件
+            this.removeEvents();
             this.switchSceneObj.object3d = null;
             this.switchSceneObj.name = "home";
             this.handleControls();
             return false;
         }
         if (this.buildingModels[obj]) {
+            // 子场景 - 添加射线事件
+            this.addEvents();
             this.changeSceneObjVisible(this.buildingModels[obj], false, obj);
             this.switchSceneObj.object3d = this.buildingModels[obj];
             this.switchSceneObj.name = obj;
@@ -458,7 +615,7 @@ string} name
 
             // Create camera position tween
             let cameraPosition = new THREE.Vector3(
-                center.x, // Offset X
+                center.x + radius * (name === "机加车间外壳" ? 1 : -1), // Offset X
                 center.y + radius, // Offset Y
                 center.z + radius * 1.5, // Offset Z
             );
@@ -536,6 +693,17 @@ string} name
         this.removeEvents();
         this.resetControls();
 
+        // 停止漫游并清理状态
+        this.stopRoaming();
+        this.roamingPath = [];
+        this.currentPathIndex = 0;
+        this.originalCameraPosition = null;
+        this.originalControlsTarget = null;
+
+        // 清理建筑透明度相关状态
+        this.buildingMaterials = [];
+        this.originalBuildingOpacities = [];
+
         this.flowLights.length = 0;
         this.bloomLights.length = 0;
         this.postprocessing.bloomEffect.intensity = 1;
@@ -555,9 +723,11 @@ string} name
 
         this.onRenderQueue.set(fan, this.update);
         this.setHD();
-        this.addEvents();
         this.box();
         this.handleControls();
+
+        // 初始化漫游路径
+        this.initRoamingPath();
     }
     updateDataInfo(status) {
         if (!this.canAnimate) return false;
@@ -726,5 +896,414 @@ string} name
         );
         this.add(spotLightHelper);
         spotLightHelper.visible = false; // 默认隐藏箭头
+    }
+
+    /**
+     * 初始化漫游路径
+     * 定义厂区内的漫游路线点
+     */
+    initRoamingPath() {
+        if (!this.ground) return;
+
+        const { center, radius } = getBoxAndSphere(this.ground).sphere;
+
+        // 定义漫游路径点 - 围绕厂区的关键位置
+        this.roamingPath = [
+            // 起始点 - 厂区入口视角
+            {
+                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.3, center.z - radius * 0.8),
+                target: new THREE.Vector3(center.x, center.y, center.z),
+                duration: 3000,
+            },
+            // 第一个观察点 - 机加车间视角
+            {
+                position: new THREE.Vector3(center.x - radius * 0.5, center.y + radius * 0.4, center.z - radius * 0.3),
+                target: new THREE.Vector3(center.x - radius * 0.2, center.y, center.z - radius * 0.2),
+                duration: 2500,
+            },
+            // 第二个观察点 - 压铸车间视角
+            {
+                position: new THREE.Vector3(center.x + radius * 0.3, center.y + radius * 0.4, center.z - radius * 0.4),
+                target: new THREE.Vector3(center.x + radius * 0.2, center.y, center.z - radius * 0.2),
+                duration: 2500,
+            },
+            // 第三个观察点 - 设备区域视角
+            {
+                position: new THREE.Vector3(center.x + radius * 0.6, center.y + radius * 0.3, center.z + radius * 0.2),
+                target: new THREE.Vector3(center.x + radius * 0.3, center.y, center.z + radius * 0.1),
+                duration: 2500,
+            },
+            // 第四个观察点 - 高空俯视视角
+            {
+                position: new THREE.Vector3(center.x, center.y + radius * 0.8, center.z + radius * 0.6),
+                target: new THREE.Vector3(center.x, center.y, center.z),
+                duration: 3000,
+            },
+            // 第五个观察点 - 机械臂区域视角
+            {
+                position: new THREE.Vector3(center.x - radius * 0.4, center.y + radius * 0.3, center.z + radius * 0.4),
+                target: new THREE.Vector3(center.x - radius * 0.2, center.y, center.z + radius * 0.2),
+                duration: 2500,
+            },
+            // 回到起始点
+            {
+                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.3, center.z - radius * 0.8),
+                target: new THREE.Vector3(center.x, center.y, center.z),
+                duration: 3000,
+            },
+        ];
+    }
+
+    /**
+     * 开始场景漫游
+     */
+    startRoaming() {
+        if (this.isRoaming) return;
+
+        // 初始化路径
+        if (this.roamingPath.length === 0) {
+            this.initRoamingPath();
+        }
+
+        // 保存原始相机位置和控制器目标
+        this.originalCameraPosition = this.camera.position.clone();
+        this.originalControlsTarget = this.controls.target.clone();
+
+        // 禁用控制器
+        this.controls.enabled = false;
+
+        this.isRoaming = true;
+        this.currentPathIndex = 0;
+
+        // 设置建筑透明
+        this.setBuildingTransparentForRoaming();
+
+        // 开始漫游
+        this.moveToNextPathPoint();
+
+        console.log("开始场景漫游");
+    }
+
+    /**
+     * 停止场景漫游
+     */
+    stopRoaming() {
+        if (!this.isRoaming) return;
+
+        this.isRoaming = false;
+
+        // 停止当前动画
+        if (this.roamingTween) {
+            this.roamingTween.stop();
+            this.roamingTween = null;
+        }
+
+        // 恢复控制器
+        this.controls.enabled = true;
+
+        // 恢复建筑透明度
+        this.restoreBuildingForRoaming();
+
+        // 可选：回到原始位置
+        if (this.originalCameraPosition && this.originalControlsTarget) {
+            new TWEEN.Tween(this.camera.position).to(this.originalCameraPosition, 2000).start();
+
+            new TWEEN.Tween(this.controls.target).to(this.originalControlsTarget, 2000).start();
+        }
+
+        console.log("停止场景漫游");
+    }
+
+    /**
+     * 移动到下一个路径点
+     */
+    moveToNextPathPoint() {
+        if (!this.isRoaming || this.currentPathIndex >= this.roamingPath.length) {
+            // 漫游完成，重新开始
+            this.currentPathIndex = 0;
+        }
+
+        const pathPoint = this.roamingPath[this.currentPathIndex];
+
+        // 创建相机位置动画
+        this.roamingTween = new TWEEN.Tween(this.camera.position)
+            .to(pathPoint.position, pathPoint.duration)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onComplete(() => {
+                // 移动到下一个点
+                this.currentPathIndex++;
+                if (this.isRoaming) {
+                    this.moveToNextPathPoint();
+                }
+            });
+
+        // 创建控制器目标点动画
+        new TWEEN.Tween(this.controls.target)
+            .to(pathPoint.target, pathPoint.duration)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .start();
+
+        // 开始相机动画
+        this.roamingTween.start();
+    }
+
+    /**
+     * 暂停漫游
+     */
+    pauseRoaming() {
+        if (this.isRoaming && this.roamingTween) {
+            this.roamingTween.pause();
+        }
+    }
+
+    /**
+     * 恢复漫游
+     */
+    resumeRoaming() {
+        if (this.isRoaming && this.roamingTween) {
+            this.roamingTween.resume();
+        }
+    }
+
+    /**
+     * 设置漫游速度
+     * @param {number} speed 速度倍数 (0.5-2.0)
+     */
+    setRoamingSpeed(speed) {
+        this.roamingSpeed = Math.max(0.5, Math.min(2.0, speed));
+
+        // 更新当前动画的速度
+        if (this.roamingTween) {
+            this.roamingTween.timeScale = this.roamingSpeed;
+        }
+    }
+
+    /**
+     * 跳转到指定路径点
+     * @param {number} index 路径点索引
+     */
+    jumpToPathPoint(index) {
+        if (index < 0 || index >= this.roamingPath.length) return;
+
+        // 停止当前动画
+        if (this.roamingTween) {
+            this.roamingTween.stop();
+        }
+
+        this.currentPathIndex = index;
+        const pathPoint = this.roamingPath[index];
+
+        // 直接跳转到指定点
+        this.camera.position.copy(pathPoint.position);
+        this.controls.target.copy(pathPoint.target);
+
+        // 如果正在漫游，继续到下一个点
+        if (this.isRoaming) {
+            this.moveToNextPathPoint();
+        }
+    }
+
+    /**
+     * 获取当前漫游状态
+     * @returns {object} 漫游状态信息
+     */
+    getRoamingStatus() {
+        return {
+            isRoaming: this.isRoaming,
+            currentIndex: this.currentPathIndex,
+            totalPoints: this.roamingPath.length,
+            speed: this.roamingSpeed,
+        };
+    }
+
+    /**
+     * 创建贝塞尔曲线路径
+     * 提供更平滑的漫游体验
+     */
+    createBezierPath() {
+        if (!this.ground) return;
+
+        const { center, radius } = getBoxAndSphere(this.ground).sphere;
+
+        // 定义控制点
+        const controlPoints = [
+            // 起始点
+            new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.3, center.z - radius * 0.8),
+            // 控制点1
+            new THREE.Vector3(center.x - radius * 0.5, center.y + radius * 0.5, center.z - radius * 0.4),
+            // 控制点2
+            new THREE.Vector3(center.x + radius * 0.3, center.y + radius * 0.4, center.z - radius * 0.4),
+            // 控制点3
+            new THREE.Vector3(center.x + radius * 0.6, center.y + radius * 0.3, center.z + radius * 0.2),
+            // 控制点4
+            new THREE.Vector3(center.x, center.y + radius * 0.8, center.z + radius * 0.6),
+            // 控制点5
+            new THREE.Vector3(center.x - radius * 0.4, center.y + radius * 0.3, center.z + radius * 0.4),
+            // 回到起始点
+            new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.3, center.z - radius * 0.8),
+        ];
+
+        // 创建贝塞尔曲线
+        const curve = new THREE.CubicBezierCurve3(
+            controlPoints[0],
+            controlPoints[1],
+            controlPoints[2],
+            controlPoints[3],
+        );
+
+        // 生成路径点
+        const points = curve.getPoints(50);
+
+        // 转换为漫游路径格式
+        this.roamingPath = points.map((point, index) => ({
+            position: point,
+            target: new THREE.Vector3(center.x, center.y, center.z),
+            duration: 1000 + Math.random() * 500, // 随机化持续时间
+        }));
+    }
+
+    /**
+     * 开始平滑漫游
+     */
+    startSmoothRoaming() {
+        if (this.isRoaming) return;
+
+        // 创建贝塞尔曲线路径
+        this.createBezierPath();
+
+        // 保存原始相机位置和控制器目标
+        this.originalCameraPosition = this.camera.position.clone();
+        this.originalControlsTarget = this.controls.target.clone();
+
+        // 禁用控制器
+        this.controls.enabled = false;
+
+        this.isRoaming = true;
+        this.currentPathIndex = 0;
+
+        // 设置建筑透明
+        this.setBuildingTransparentForRoaming();
+
+        // 开始平滑漫游
+        this.moveToNextSmoothPoint();
+
+        console.log("开始平滑漫游");
+    }
+
+    /**
+     * 移动到下一个平滑路径点
+     */
+    moveToNextSmoothPoint() {
+        if (!this.isRoaming || this.currentPathIndex >= this.roamingPath.length) {
+            // 漫游完成，重新开始
+            this.currentPathIndex = 0;
+        }
+
+        const pathPoint = this.roamingPath[this.currentPathIndex];
+
+        // 创建相机位置动画，使用更平滑的缓动
+        this.roamingTween = new TWEEN.Tween(this.camera.position)
+            .to(pathPoint.position, pathPoint.duration)
+            .easing(TWEEN.Easing.Cubic.InOut)
+            .onComplete(() => {
+                // 移动到下一个点
+                this.currentPathIndex++;
+                if (this.isRoaming) {
+                    this.moveToNextSmoothPoint();
+                }
+            });
+
+        // 创建控制器目标点动画
+        new TWEEN.Tween(this.controls.target)
+            .to(pathPoint.target, pathPoint.duration)
+            .easing(TWEEN.Easing.Cubic.InOut)
+            .start();
+
+        // 开始相机动画
+        this.roamingTween.start();
+    }
+
+    /**
+     * 添加自定义漫游路径点
+     * @param {THREE.Vector3} position 相机位置
+     * @param {THREE.Vector3} target 目标点
+     * @param {number} duration 动画持续时间
+     */
+    addCustomPathPoint(position, target, duration = 2000) {
+        this.roamingPath.push({
+            position: position.clone(),
+            target: target.clone(),
+            duration: duration,
+        });
+    }
+
+    /**
+     * 清除自定义路径
+     */
+    clearCustomPath() {
+        this.roamingPath = [];
+        this.currentPathIndex = 0;
+    }
+
+    /**
+     * 设置循环漫游模式
+     * @param {boolean} loop 是否循环
+     */
+    setLoopMode(loop) {
+        this.loopMode = loop;
+    }
+
+    /**
+     * 获取路径可视化对象（用于调试）
+     * @returns {THREE.Line} 路径线条
+     */
+    getPathVisualization() {
+        if (this.roamingPath.length === 0) return null;
+
+        const points = this.roamingPath.map(point => point.position);
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const line = new THREE.Line(geometry, material);
+
+        return line;
+    }
+
+    /**
+     * 设置建筑透明度
+     * @param {number} opacity 透明度值 (0-1)
+     * @param {number} duration 动画持续时间
+     */
+    setBuildingOpacity(opacity, duration = 1000) {
+        this.buildingMaterials.forEach((material, index) => {
+            new TWEEN.Tween(material).to({ opacity: opacity }, duration).easing(TWEEN.Easing.Quadratic.InOut).start();
+        });
+    }
+
+    /**
+     * 恢复建筑原始透明度
+     * @param {number} duration 动画持续时间
+     */
+    restoreBuildingOpacity(duration = 1000) {
+        this.buildingMaterials.forEach((material, index) => {
+            const originalOpacity = this.originalBuildingOpacities[index] || 1.0;
+            new TWEEN.Tween(material)
+                .to({ opacity: originalOpacity }, duration)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .start();
+        });
+    }
+
+    /**
+     * 漫游开始时设置建筑透明
+     */
+    setBuildingTransparentForRoaming() {
+        this.setBuildingOpacity(this.roamingBuildingOpacity, 800);
+    }
+
+    /**
+     * 漫游结束时恢复建筑透明度
+     */
+    restoreBuildingForRoaming() {
+        this.restoreBuildingOpacity(800);
     }
 }

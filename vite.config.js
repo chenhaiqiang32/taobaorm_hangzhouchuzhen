@@ -41,6 +41,7 @@ export default defineConfig({
         host: "0.0.0.0",
     },
     build: {
+        outDir: "docs", // 输出目录改为docs
         manifest: false,
         sourcemap: false, // 构建后是否生成 source map 文件。如果为 true，将会创建一个独立的 source map 文件
         rollupOptions: {
