@@ -76,7 +76,7 @@ export class HeatSource extends Subsystem {
             dian: new THREE.Color(0.0588, 0.1373, 0.9686),
             skinCheck: new THREE.Color(0.2275, 0.9961, 0.7922),
         };
-        this.scene.fog = new THREE.FogExp2("ffffff", 0.0001); // 启用雾气
+        this.scene.fog = new THREE.Fog("#cce8ff", 450, 800); // 启用雾气
 
         // 漫游相关属性
         this.isRoaming = false; // 是否正在漫游
