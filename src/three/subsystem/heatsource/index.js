@@ -8,11 +8,11 @@ import { Core3D } from "../..";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import { processingCommonModel, processingAnimations } from "../../processing";
-
 import { FlowLight } from "../../../lib/blMeshes";
 import { PlatformCircle } from "../../../lib/PlatformCircle";
 import { LabelEntity } from "../../../lib/LabelEntity";
 import { shaderModify } from "../../../shader/shaderModify";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { Reflector } from "../../../lib/Reflector";
 import { getBoxAndSphere } from "../../../utils";
 import BoxModel from "../../../lib/boxModel";
@@ -89,6 +89,7 @@ export class HeatSource extends Subsystem {
         // 建筑透明度控制
         this.buildingMaterials = []; // 存储建筑材质
         this.originalBuildingOpacities = []; // 存储原始透明度
+        this.originalBuildingTransparent = []; // 存储原始transparent属性
         this.roamingBuildingOpacity = 0.2; // 漫游时建筑透明度
 
         // this.createDiv();
@@ -287,16 +288,87 @@ export class HeatSource extends Subsystem {
         css2d.rotation.y = -Math.PI / 2;
         return css2d;
     }
-    setHD() {
-        // HDR贴图
-        const hdrPath = "./hdr/skybox.hdr";
+    setEnvironment(type = "room", options = {}) {
+        // 先清理现有环境
+        this.clearEnvironment();
+
+        switch (type) {
+            case "room":
+                // 使用 RoomEnvironment
+                const pmremGenerator = new THREE.PMREMGenerator(this.core.renderer);
+                this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.8).texture;
+                // this.scene.background = SunnyTexture;
+                console.log("已设置 RoomEnvironment");
+                break;
+
+            case "hdr":
+                // 使用 HDR 环境贴图
+                this.setHDRSky();
+                break;
+
+            case "default":
+                // 使用默认环境
+                // this.scene.background = SunnyTexture;
+                console.log("已设置默认环境");
+                break;
+
+            default:
+                console.warn(`未知的环境类型: ${type}`);
+                break;
+        }
+
+        // 更新所有材质的环境贴图
+        this.updateAllMaterialsEnvironment();
+    }
+    setHDRSky() {
         const rgbeLoader = new RGBELoader();
-        rgbeLoader.load(hdrPath, texture => {
-            texture.mapping = THREE.EquirectangularReflectionMapping; // 改为反射映射
-            texture.encoding = THREE.sRGBEncoding; // 确保编码正确
-            this.scene.environment = texture;
+        rgbeLoader.load("./hdr1.hdr", texture => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
             this.scene.background = texture;
+            this.scene.environment = texture;
         });
+    }
+    /**
+     * 更新所有材质的环境贴图
+     */
+    updateAllMaterialsEnvironment() {
+        this.scene.traverse(object => {
+            if (object.isMesh && object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => {
+                        this.setupMaterialEnvironment(material);
+                    });
+                } else {
+                    this.setupMaterialEnvironment(object.material);
+                }
+            }
+        });
+    }
+    /**
+     * 设置单个材质的环境贴图
+     * @param {THREE.Material} material
+     */
+    setupMaterialEnvironment(material) {
+        if (material && (material.isMeshStandardMaterial || material.isMeshPhysicalMaterial)) {
+            if (this.scene.environment) {
+                material.envMap = this.scene.environment;
+                material.envMapIntensity = 0.8;
+                material.needsUpdate = true;
+            }
+        }
+    }
+    /**
+     * 清理环境贴图资源
+     */
+    clearEnvironment() {
+        if (this.scene.environment) {
+            this.scene.environment.dispose();
+            this.scene.environment = null;
+        }
+        if (this.scene.background) {
+            this.scene.background.dispose();
+            this.scene.background = null;
+        }
     }
     createDom(deviceId) {
         if (!this.webData[deviceId]) {
@@ -464,9 +536,10 @@ string} name
                     if (child.material) {
                         this.buildingMaterials.push(child.material);
                         this.originalBuildingOpacities.push(child.material.opacity || 1.0);
+                        this.originalBuildingTransparent.push(child.material.transparent || false);
 
                         // 确保材质支持透明度
-                        child.material.transparent = true;
+                        // child.material.transparent = true;
                         child.material.needsUpdate = true;
                     }
                 }
@@ -594,13 +667,32 @@ string} name
     changeSceneObjVisible(object3d, visible, name) {
         object3d.traverse(child => {
             if (child instanceof THREE.Mesh) {
-                // Make sure material is transparent
+                // 找到材质在buildingMaterials中的索引
+                const materialIndex = this.buildingMaterials.indexOf(child.material);
+                let originalTransparent = false;
+
+                if (materialIndex !== -1) {
+                    // 如果材质在buildingMaterials中，获取其原始transparent值
+                    originalTransparent = this.originalBuildingTransparent[materialIndex] || false;
+                } else {
+                    // 如果不在buildingMaterials中，记录当前的transparent值
+                    originalTransparent = child.material.transparent || false;
+                }
+
+                // 设置transparent为true以支持透明度动画
                 child.material.transparent = true;
+                child.material.needsUpdate = true;
 
                 // Create tween for opacity
                 const tween = new TWEEN.Tween(child.material).to({ opacity: visible ? 1 : 0 }, 1000).onComplete(() => {
                     // Set visibility after opacity transition
                     child.visible = visible;
+
+                    // 当opacity还原为1时，恢复原始的transparent值
+                    if (visible) {
+                        child.material.transparent = originalTransparent;
+                        child.material.needsUpdate = true;
+                    }
                 });
 
                 // Start the tween
@@ -703,6 +795,7 @@ string} name
         // 清理建筑透明度相关状态
         this.buildingMaterials = [];
         this.originalBuildingOpacities = [];
+        this.originalBuildingTransparent = [];
 
         this.flowLights.length = 0;
         this.bloomLights.length = 0;
@@ -722,7 +815,7 @@ string} name
         this.postprocessing.bloomEffect.intensity = 15;
 
         this.onRenderQueue.set(fan, this.update);
-        this.setHD();
+        this.setEnvironment("hdr");
         this.box();
         this.handleControls();
 
@@ -779,7 +872,7 @@ string} name
         const vec = new THREE.Vector3(radius, radius, radius).multiplyScalar(1);
         const position = center.clone().add(vec);
 
-        this.addLight(vec, center);
+        // this.addLight(vec, center);
     }
     /**
      * 设置设备状态
@@ -805,24 +898,8 @@ string} name
         this.boxModelObj && this.boxModelObj.update(this.elapsedTime);
     };
     addLight(dev, center) {
-        // const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
-        // directionalLight.shadow.camera.near = 1;
-        // directionalLight.shadow.camera.far = 150;
-        // directionalLight.shadow.camera.right = 10;
-        // directionalLight.shadow.camera.left = -10;
-        // directionalLight.shadow.camera.top = 10;
-        // directionalLight.shadow.camera.bottom = -10;
-        // directionalLight.shadow.mapSize.width = 4096;
-        // directionalLight.shadow.mapSize.height = 4096;
-        // directionalLight.shadow.radius = 1.1;
-        // directionalLight.shadow.bias = -0.002;
-        // directionalLight.position.set(center.x, center.y + 4, center.z + 4);
-        // directionalLight.target.position.copy(center);
-        // directionalLight.castShadow = true;
-        // this.add(directionalLight);
-
         // 环境光
-        const ambientLight = new THREE.AmbientLight(0x404040, 0);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
         this.add(ambientLight);
 
         // 点光源一
@@ -878,7 +955,7 @@ string} name
         dirLightHelper.visible = false; // 默认隐藏箭头
 
         // 聚光灯
-        const spotLight = new THREE.SpotLight(0xffffff, 0);
+        const spotLight = new THREE.SpotLight(0xffffff, 1);
         spotLight.position.set(-2, 4, 2); // 调整光源位置
         spotLight.castShadow = true; // 启用阴影
         spotLight.penumbra = 0.6; // 边缘柔化程度
@@ -1275,6 +1352,10 @@ string} name
      */
     setBuildingOpacity(opacity, duration = 1000) {
         this.buildingMaterials.forEach((material, index) => {
+            // 设置transparent为true以支持透明度
+            material.transparent = true;
+            material.needsUpdate = true;
+
             new TWEEN.Tween(material).to({ opacity: opacity }, duration).easing(TWEEN.Easing.Quadratic.InOut).start();
         });
     }
@@ -1286,6 +1367,12 @@ string} name
     restoreBuildingOpacity(duration = 1000) {
         this.buildingMaterials.forEach((material, index) => {
             const originalOpacity = this.originalBuildingOpacities[index] || 1.0;
+            const originalTransparent = this.originalBuildingTransparent[index] || false;
+
+            // 恢复原始的transparent属性
+            material.transparent = originalTransparent;
+            material.needsUpdate = true;
+
             new TWEEN.Tween(material)
                 .to({ opacity: originalOpacity }, duration)
                 .easing(TWEEN.Easing.Quadratic.InOut)
