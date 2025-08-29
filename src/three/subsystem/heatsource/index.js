@@ -44,6 +44,7 @@ export class HeatSource extends Subsystem {
             this.core.scene.background = e;
             this.core.scene.backgroundRotation.setFromVector3(new THREE.Vector3(0, 0, 0));
         });
+        this.glassMaterials = [];
         this.tweenControls = new TweenControls(this);
         this.modelsEquip = {}; // 设备模型 shuju
         this.statusColor = { 1: "#33ff33", 2: "#faa755", 3: "#a1a3a6", 4: "#ed1941" };
@@ -538,6 +539,10 @@ string} name
                         this.originalBuildingOpacities.push(child.material.opacity || 1.0);
                         this.originalBuildingTransparent.push(child.material.transparent || false);
 
+                        if (child.name?.toLowerCase().includes("move")) {
+                            if (child.material?.map) this.glassMaterials.push(child.material.map);
+                            if (child.material?.emissiveMap) this.glassMaterials.push(child.material.emissiveMap);
+                        }
                         // 确保材质支持透明度
                         // child.material.transparent = true;
                         child.material.needsUpdate = true;
@@ -894,7 +899,11 @@ string} name
                 }
             });
         }
-
+        if (this.glassMaterials.length) {
+            this.glassMaterials.forEach(map => {
+                map.offset.x += -0.008;
+            });
+        }
         this.boxModelObj && this.boxModelObj.update(this.elapsedTime);
     };
     addLight(dev, center) {
