@@ -11,7 +11,7 @@ import { processingCommonModel, processingAnimations } from "../../processing";
 import { FlowLight } from "../../../lib/blMeshes";
 import { PlatformCircle } from "../../../lib/PlatformCircle";
 import { LabelEntity } from "../../../lib/LabelEntity";
-import { shaderModify } from "../../../shader/shaderModify";
+import { shaderModify, changeEdgeFadeWidth, changeEdgeFadeDistance } from "../../../shader/shaderModify";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { Reflector } from "../../../lib/Reflector";
 import { getBoxAndSphere } from "../../../utils";
@@ -78,7 +78,7 @@ export class HeatSource extends Subsystem {
             dian: new THREE.Color(0.0588, 0.1373, 0.9686),
             skinCheck: new THREE.Color(0.2275, 0.9961, 0.7922),
         };
-        this.scene.fog = new THREE.Fog("#CDD3D6", 320, 800); // 启用雾气
+        // this.scene.fog = new THREE.Fog("#CDD3D6", 320, 800); // 启用雾气
 
         // 漫游相关属性
         this.isRoaming = false; // 是否正在漫游
@@ -97,6 +97,47 @@ export class HeatSource extends Subsystem {
 
         // this.createDiv();
         openWebsocket(this);
+    }
+
+    /**
+     * 为地面材质应用边缘虚化效果
+     * @param {THREE.Material} material - 地面材质
+     */
+    applyGroundEdgeFade(material) {
+        if (!material) {
+            return;
+        }
+
+        // 确保材质支持透明度
+        material.transparent = true;
+        material.alphaTest = 0.1;
+
+        // 设置适合地面的边缘虚化参数
+        changeEdgeFadeWidth(100.0); // 较大的虚化宽度，适合地面
+        changeEdgeFadeDistance(60.0); // 较大的非虚化区域
+
+        // 应用边缘虚化着色器
+        material.onBeforeCompile = shader => {
+            shaderModify(shader, {
+                shader: "edgeFadeUV",
+            });
+        };
+
+        // 强制更新材质
+        material.needsUpdate = true;
+
+        console.log("已为地面材质 '地面_Moss003_1K-JPG' 应用边缘虚化效果");
+    }
+
+    /**
+     * 动态调整地面边缘虚化参数
+     * @param {number} width - 虚化宽度
+     * @param {number} distance - 非虚化区域
+     */
+    updateGroundEdgeFade(width = 100.0, distance = 60.0) {
+        changeEdgeFadeWidth(width);
+        changeEdgeFadeDistance(distance);
+        console.log(`地面边缘虚化参数已更新: 宽度=${width}, 距离=${distance}`);
     }
     toDoDevice(device) {
         device.forEach(child => {
@@ -473,12 +514,12 @@ export class HeatSource extends Subsystem {
         const { center, radius } = getBoxAndSphere(this.ground).sphere;
 
         // Calculate camera position at center + 1.5 * radius
-        const cameraPosition = new THREE.Vector3(center.x + radius, center.y + radius * 1, center.z + radius * 1.5);
+        const cameraPosition = new THREE.Vector3(center.x + radius, center.y - 80, center.z + radius * 1.5);
 
         new TWEEN.Tween(this.camera.position).to(cameraPosition, 1000).start();
 
         // Animate camera target
-        new TWEEN.Tween(this.controls.target).to(new THREE.Vector3(center.x - 32, center.y, center.z), 1000).start();
+        new TWEEN.Tween(this.controls.target).to(new THREE.Vector3(center.x - 48, center.y, center.z), 1000).start();
         if (this.css2d && typeof this.css2d.visible !== "undefined") {
             this.css2d.visible = false;
         }
@@ -576,6 +617,15 @@ string} name
                 if (child instanceof THREE.Mesh) {
                     child.renderOrder = 0;
                     child.receiveShadow = true;
+
+                    // 为地面材质添加边缘虚化效果
+                    if (
+                        child.material &&
+                        (child.material.name === "地面_Moss003_1K-JPG" ||
+                            child.material.name === "路_Asphalt020L_1K-JPG")
+                    ) {
+                        this.applyGroundEdgeFade(child.material);
+                    }
                 }
             });
         }
@@ -932,12 +982,8 @@ string} name
         this.boxModelObj && this.boxModelObj.update(this.elapsedTime);
     };
     addLight(dev, center) {
-        // 环境光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-        this.add(ambientLight);
-
         // 平行光
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.4);
+        const directionalLight = new THREE.DirectionalLight(0xffedcc, 1.5);
         directionalLight.position.set(8, 15, -3.6); // 调整光源方向
         directionalLight.target.position.set(0, 0, 0); // 指向地面中心
         directionalLight.castShadow = true; // 启用阴影
@@ -955,14 +1001,6 @@ string} name
         directionalLight.shadow.bias = -0.002;
         this.add(directionalLight.target);
         this.add(directionalLight);
-        const dirLightHelper = new THREE.ArrowHelper(
-            directionalLight.target.position.clone().sub(directionalLight.position).normalize(),
-            directionalLight.position,
-            1.5, // 箭头长度
-            0xcccccc, // 箭头颜色
-        );
-        this.add(dirLightHelper);
-        dirLightHelper.visible = false; // 默认隐藏箭头
     }
 
     /**

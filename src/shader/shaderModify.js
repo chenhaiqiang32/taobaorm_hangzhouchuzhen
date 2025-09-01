@@ -14,22 +14,24 @@ import {
     DIFFUSE_END,
     fresnelLevelS,
     fresnelChangeColor,
+    edgeFadeWidth,
+    edgeFadeDistance,
 } from "./paramaters";
 
 // 风格参数
 export function changeLightingPattern(pattern) {
     lightingPattern.value = pattern;
 }
-export function changeFresnel(pattern,name) {
+export function changeFresnel(pattern, name) {
     fresnelLevelS[name].value = pattern;
 }
-export function changeFresnelSkinColor(pattern,name) {
+export function changeFresnelSkinColor(pattern, name) {
     fresnelChangeColor[name].value = pattern;
-    console.log(fresnelChangeColor[name].value,pattern);
+    console.log(fresnelChangeColor[name].value, pattern);
 }
 export function flowTimeUpdate(type) {
     if (type === 1) {
-        const t = new TWEEN.Tween(flowTime).to({ value: 1.0 },5500).start();
+        const t = new TWEEN.Tween(flowTime).to({ value: 1.0 }, 5500).start();
     }
     if (type === 2) {
         flowTime.value = 0;
@@ -42,20 +44,28 @@ export function shaderUpdateTime(time) {
 // 玻璃时间参数更改
 export function glassTimeUpdate(time) {
     if (time === DAY) {
-        const t = new TWEEN.Tween(glassTime).to({ value: 0 },3500).start();
+        const t = new TWEEN.Tween(glassTime).to({ value: 0 }, 3500).start();
     }
     if (time === NIGHT) {
-        const t = new TWEEN.Tween(glassTime).to({ value: 1 },2500).easing(TWEEN.Easing.Quadratic.In).start();
+        const t = new TWEEN.Tween(glassTime).to({ value: 1 }, 2500).easing(TWEEN.Easing.Quadratic.In).start();
     }
 }
+// 边缘虚化参数控制函数
+export function changeEdgeFadeWidth(width) {
+    edgeFadeWidth.value = width;
+}
+
+export function changeEdgeFadeDistance(distance) {
+    edgeFadeDistance.value = distance;
+}
+
 /**
  * @function shaderModify 着色器主函数
  * @param {THREE.Mesh} mesh
  * @param {{shader:string}} [param={}]
  */
 
-export function shaderModify(shader,param = {}) {
-
+export function shaderModify(shader, param = {}) {
     shader.uniforms.uStyle = lightingPattern;
     shader.uniforms.uElapseTime = elapsedTime;
     if (param.shader === "fresnel" && param.shaderName) {
@@ -64,13 +74,17 @@ export function shaderModify(shader,param = {}) {
     if (param.shader === "fresnel" && param.cColor) {
         param.cColor && (shader.uniforms.uColor = fresnelChangeColor[param.shaderName]);
     }
+    // 添加边缘虚化uniform
+    if (param.shader === "edgeFadeConfig") {
+        shader.uniforms.uEdgeFadeWidth = edgeFadeWidth;
+        shader.uniforms.uEdgeFadeDistance = edgeFadeDistance;
+    }
     param.color && (shader.uniforms.uColor = { value: param.color });
-    addUniform(shader,param);
-    shaderChunk[param.shader](shader,param);
-
+    addUniform(shader, param);
+    shaderChunk[param.shader](shader, param);
 }
 
-function addUniform(shader,param) {
+function addUniform(shader, param) {
     shader.vertexShader = shader.vertexShader.replace(
         "#include <common>",
         `

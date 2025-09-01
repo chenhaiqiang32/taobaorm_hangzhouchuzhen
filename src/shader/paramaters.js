@@ -1,6 +1,5 @@
 /** @description 灯光风格控制器 4白天，8夜晚 16科技风 */
 import * as THREE from "three";
-import { fresnelChunk } from "./lib/fresnel";
 export const DAY = 4;
 export const NIGHT = 8;
 export const SCIENCE = 16;
@@ -105,6 +104,16 @@ export const flowTime = {
 export const glassTime = {
     value: 0,
 };
+
+// 边缘虚化参数
+export const edgeFadeWidth = {
+    value: 50.0,
+};
+
+export const edgeFadeDistance = {
+    value: 30.0,
+};
+
 /**
  * @description 着色器定位锚点
  * @SHADER_END  着色器最终输出值处
