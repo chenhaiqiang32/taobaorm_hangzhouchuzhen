@@ -56,7 +56,9 @@ export class HeatSource extends Subsystem {
         this.actionsObj = {};
         this.rotateObj = null;
         this.css2d = this.createDefault();
-        this.css2d.visible = false;
+        if (this.css2d && typeof this.css2d.visible !== "undefined") {
+            this.css2d.visible = false;
+        }
         this.add(this.css2d);
         this.boxModelObj = new BoxModel(core);
         this.postprocessing = core.postprocessing;
@@ -428,7 +430,9 @@ export class HeatSource extends Subsystem {
                 if (hasCocaCola) {
                     this.doHandel(returnData.name);
                 } else {
-                    this.css2d.visible = false;
+                    if (this.css2d && typeof this.css2d.visible !== "undefined") {
+                        this.css2d.visible = false;
+                    }
                 }
             }
         });
@@ -475,7 +479,9 @@ export class HeatSource extends Subsystem {
 
         // Animate camera target
         new TWEEN.Tween(this.controls.target).to(new THREE.Vector3(center.x - 32, center.y, center.z), 1000).start();
-        this.css2d.visible = false;
+        if (this.css2d && typeof this.css2d.visible !== "undefined") {
+            this.css2d.visible = false;
+        }
     }
 
     resetControls() {
@@ -661,7 +667,9 @@ string} name
         if (this.switchSceneObj.object3d) {
             this.changeSceneObjVisible(this.switchSceneObj.object3d, true, obj);
         }
-        this.css2d.visible = false;
+        if (this.css2d && typeof this.css2d.visible !== "undefined") {
+            this.css2d.visible = false;
+        }
         if (!this.buildingModels[obj]) {
             // 首页 - 移除射线事件
             this.removeEvents();
@@ -756,14 +764,16 @@ string} name
             end: center,
             duration: 1000,
             onComplete: () => {
-                if (this.css2d) {
+                if (this.css2d && typeof this.css2d.deleteSelf === "function") {
                     this.css2d.deleteSelf();
                 }
                 postWeb3dDeviceCode(deviceId);
-                this.css2d = this.createDom(deviceId);
-                if (!this.css2d) {
+                const newCss2d = this.createDom(deviceId);
+                if (!newCss2d) {
+                    this.css2d = null;
                     return false;
                 }
+                this.css2d = newCss2d;
                 this.css2d.position.copy(new THREE.Vector3(center.x, max.y, center.z));
                 this.css2d.visible = true;
                 this.add(this.css2d);
@@ -789,7 +799,9 @@ string} name
                 if (data.code === 200) {
                     this.doHandel(data.data, deviceId);
                 } else {
-                    this.css2d.visible = false;
+                    if (this.css2d && typeof this.css2d.visible !== "undefined") {
+                        this.css2d.visible = false;
+                    }
                 }
             });
     }
