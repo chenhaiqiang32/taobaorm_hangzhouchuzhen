@@ -76,7 +76,7 @@ export class HeatSource extends Subsystem {
             dian: new THREE.Color(0.0588, 0.1373, 0.9686),
             skinCheck: new THREE.Color(0.2275, 0.9961, 0.7922),
         };
-        this.scene.fog = new THREE.Fog("#cce8ff", 450, 800); // 启用雾气
+        this.scene.fog = new THREE.Fog("#CDD3D6", 320, 800); // 启用雾气
 
         // 漫游相关属性
         this.isRoaming = false; // 是否正在漫游
@@ -573,6 +573,15 @@ string} name
                 }
             });
         }
+        if (name === "other") {
+            gltf.scene.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    child.renderOrder = 2;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+        }
         processingAnimations(gltf, this);
         this._add(gltf.scene);
     };
@@ -733,7 +742,6 @@ string} name
         // 使用 fetch 调用接口
         const { center, radius } = getBoxAndSphere(this.modelsEquip[deviceId]).sphere;
         const { max } = getBoxAndSphere(this.modelsEquip[deviceId]).box;
-        debugger;
         this.tweenControls.changeTo({
             start: this.camera.position,
             end: {
@@ -824,6 +832,11 @@ string} name
         this.box();
         this.handleControls();
 
+        // 确保渲染器阴影设置正确
+        this.core.renderer.shadowMap.enabled = true;
+        this.core.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.core.renderer.shadowMap.autoUpdate = true;
+
         // 初始化漫游路径
         this.initRoamingPath();
     }
@@ -877,7 +890,7 @@ string} name
         const vec = new THREE.Vector3(radius, radius, radius).multiplyScalar(1);
         const position = center.clone().add(vec);
 
-        // this.addLight(vec, center);
+        this.addLight(vec, center);
     }
     /**
      * 设置设备状态
@@ -908,46 +921,22 @@ string} name
     };
     addLight(dev, center) {
         // 环境光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         this.add(ambientLight);
 
-        // 点光源一
-        const pointLight1 = new THREE.PointLight(0xffffff, 0, 100, 2);
-        pointLight1.position.set(0, 3, 1); // 设置光源位置
-        pointLight1.castShadow = true; // 启用阴影
-        this.add(pointLight1);
-        const lightHelper1 = new THREE.Mesh(
-            new THREE.SphereGeometry(0.05), // 小球尺寸
-            new THREE.MeshBasicMaterial({ color: 0xcccccc }), // 球体颜色
-        );
-        lightHelper1.position.copy(pointLight1.position);
-        this.add(lightHelper1);
-        lightHelper1.visible = false; // 默认隐藏小球
-
-        // 点光源二
-        const pointLight2 = new THREE.PointLight(0xffffff, 0, 100, 2);
-        pointLight2.position.set(0, 2, -1); // 设置光源位置
-        pointLight2.castShadow = true; // 启用阴影
-        this.add(pointLight2);
-        const lightHelper2 = new THREE.Mesh(
-            new THREE.SphereGeometry(0.05), // 小球尺寸
-            new THREE.MeshBasicMaterial({ color: 0xcccccc }), // 球体颜色
-        );
-        lightHelper2.position.copy(pointLight2.position);
-        this.add(lightHelper2);
-        lightHelper2.visible = false; // 默认隐藏小球
-
         // 平行光
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.7);
-        directionalLight.position.set(-10, 10, 10); // 调整光源方向
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.4);
+        directionalLight.position.set(8, 15, -3.6); // 调整光源方向
         directionalLight.target.position.set(0, 0, 0); // 指向地面中心
         directionalLight.castShadow = true; // 启用阴影
-        directionalLight.shadow.camera.near = 1;
-        directionalLight.shadow.camera.far = 150;
-        directionalLight.shadow.camera.right = 10;
-        directionalLight.shadow.camera.left = -10;
-        directionalLight.shadow.camera.top = 10;
-        directionalLight.shadow.camera.bottom = -10;
+        // 特殊日光阴影参数
+        directionalLight.shadow.camera.left = -200; //视野内15米投射阴影
+        directionalLight.shadow.camera.right = 200;
+        directionalLight.shadow.camera.top = 200;
+        directionalLight.shadow.camera.bottom = -200;
+        directionalLight.shadow.camera.near = 0; //距光源1开始阴影
+        directionalLight.shadow.camera.far = 200; //距光源50结束阴影
+        directionalLight.shadow.camera.updateProjectionMatrix();
         directionalLight.shadow.mapSize.width = 4096;
         directionalLight.shadow.mapSize.height = 4096;
         directionalLight.shadow.radius = 1.1;
@@ -962,26 +951,6 @@ string} name
         );
         this.add(dirLightHelper);
         dirLightHelper.visible = false; // 默认隐藏箭头
-
-        // 聚光灯
-        const spotLight = new THREE.SpotLight(0xffffff, 1);
-        spotLight.position.set(-2, 4, 2); // 调整光源位置
-        spotLight.castShadow = true; // 启用阴影
-        spotLight.penumbra = 0.6; // 边缘柔化程度
-        const targetObj = new THREE.Object3D();
-        targetObj.position.set(0, 0, 0);
-        this.add(targetObj);
-        spotLight.target = targetObj;
-        this.add(spotLight);
-        this.add(spotLight.target);
-        const spotLightHelper = new THREE.ArrowHelper(
-            targetObj.position.clone().sub(spotLight.position).normalize(),
-            spotLight.position,
-            1.5, // 箭头长度
-            0xcccccc, // 箭头颜色
-        );
-        this.add(spotLightHelper);
-        spotLightHelper.visible = false; // 默认隐藏箭头
     }
 
     /**
