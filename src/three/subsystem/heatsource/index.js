@@ -44,6 +44,9 @@ export class HeatSource extends Subsystem {
             this.core.scene.background = e;
             this.core.scene.backgroundRotation.setFromVector3(new THREE.Vector3(0, 0, 0));
         });
+        this.defaultCameraPosition = {x: -9.727132849301427, y: 49.603588976490755, z: 162.0844374055427}
+        this.defaultControlsTarget = {x: -175.7911564311957, y: 13.750290410418177, z: -11.394121982750669}
+
         this.glassMaterials = [];
         this.tweenControls = new TweenControls(this);
         this.modelsEquip = {}; // 设备模型 shuju
@@ -72,6 +75,7 @@ export class HeatSource extends Subsystem {
         this.ground = null;
         this.raycastEvents = [];
         this.tweenCode = null;
+        this.roamingTweens = []; // 存储所有漫游相关的动画
         this.shaderColor = {
             wall: new THREE.Color(0.4431, 0.4784, 0.502),
             shan: new THREE.Color(0.9569, 0.9843, 0.5882),
@@ -93,8 +97,7 @@ export class HeatSource extends Subsystem {
         this.buildingMaterials = []; // 存储建筑材质
         this.originalBuildingOpacities = []; // 存储原始透明度
         this.originalBuildingTransparent = []; // 存储原始transparent属性
-        this.roamingBuildingOpacity = 0.2; // 漫游时建筑透明度
-
+        // this.roamingBuildingOpacity = 0.2; // 漫游时建筑透明度
         // this.createDiv();
         openWebsocket(this);
     }
@@ -467,13 +470,20 @@ export class HeatSource extends Subsystem {
     addEvents() {
         const { clear: clear, intersects } = this.core.raycast("click", Object.values(this.modelsEquip), () => {
             if (intersects.length) {
+                // 检查是否点击到了设备
                 let { hasCocaCola, returnData } = this.traverFromParent(intersects[0].object);
                 if (hasCocaCola) {
                     this.doHandel(returnData.name);
                 } else {
+                    // 点击到任意位置都隐藏css2d
                     if (this.css2d && typeof this.css2d.visible !== "undefined") {
                         this.css2d.visible = false;
                     }
+                }
+            } else {
+                // 没有点击到任何对象时也隐藏css2d
+                if (this.css2d && typeof this.css2d.visible !== "undefined") {
+                    this.css2d.visible = false;
                 }
             }
         });
@@ -507,19 +517,26 @@ export class HeatSource extends Subsystem {
     }
 
     handleControls() {
-        Reflect.ownKeys(controlsParameters).forEach(key => {
-            this.controls.data[key] = this.controls[key];
-            this.controls[key] = controlsParameters[key];
-        });
-        const { center, radius } = getBoxAndSphere(this.ground).sphere;
+        // 先禁用控制器，避免参数设置时立即调整相机位置
+        this.controls.enabled = false;
+        // 创建相机位置动画
+        const cameraTween = new TWEEN.Tween(this.camera.position)
+            .to(this.defaultCameraPosition, 1000)
+            .easing(TWEEN.Easing.Cubic.InOut)
+            .onComplete(() => {
+                // 动画完成后重新启用控制器
+                this.controls.enabled = true;
+            });
 
-        // Calculate camera position at center + 1.5 * radius
-        const cameraPosition = new THREE.Vector3(center.x + radius, center.y - 80, center.z + radius * 1.5);
+        // 创建目标点动画
+        const targetTween = new TWEEN.Tween(this.controls.target)
+            .to(this.defaultControlsTarget, 1000)
+            .easing(TWEEN.Easing.Cubic.InOut);
 
-        new TWEEN.Tween(this.camera.position).to(cameraPosition, 1000).start();
+        // 同时开始两个动画
+        cameraTween.start();
+        targetTween.start();
 
-        // Animate camera target
-        new TWEEN.Tween(this.controls.target).to(new THREE.Vector3(center.x - 48, center.y, center.z), 1000).start();
         if (this.css2d && typeof this.css2d.visible !== "undefined") {
             this.css2d.visible = false;
         }
@@ -590,7 +607,7 @@ string} name
                             if (child.material?.map) this.glassMaterials.push(child.material.map);
                             if (child.material?.emissiveMap) this.glassMaterials.push(child.material.emissiveMap);
                         }
-                        // 确保材质支持透明度
+                        // 确保材质支持透明度，用于漫游时的隐藏/显示动画
                         // child.material.transparent = true;
                         child.material.needsUpdate = true;
                     }
@@ -1005,56 +1022,62 @@ string} name
 
     /**
      * 初始化漫游路径
-     * 定义厂区内的漫游路线点
+     * 定义厂区内的漫游路线点 - 优化减少眩晕感
      */
     initRoamingPath() {
         if (!this.ground) return;
 
         const { center, radius } = getBoxAndSphere(this.ground).sphere;
 
-        // 定义漫游路径点 - 围绕厂区的关键位置
+        // 扩大漫游范围，减少高度变化，增加过渡时间
         this.roamingPath = [
-            // 起始点 - 厂区入口视角
+            // 起始点 - 厂区入口视角（扩大范围，降低高度变化）
             {
-                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.3, center.z - radius * 0.8),
+                position: new THREE.Vector3(center.x - radius * 1.2, center.y + radius * 0.4, center.z - radius * 1.2),
                 target: new THREE.Vector3(center.x, center.y, center.z),
-                duration: 3000,
+                duration: 5000, // 增加过渡时间
             },
-            // 第一个观察点 - 机加车间视角
+            // 第一个观察点 - 机加车间视角（减少高度变化）
             {
-                position: new THREE.Vector3(center.x - radius * 0.5, center.y + radius * 0.4, center.z - radius * 0.3),
-                target: new THREE.Vector3(center.x - radius * 0.2, center.y, center.z - radius * 0.2),
-                duration: 2500,
+                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.5, center.z - radius * 0.6),
+                target: new THREE.Vector3(center.x - radius * 0.3, center.y, center.z - radius * 0.3),
+                duration: 4500,
             },
-            // 第二个观察点 - 压铸车间视角
+            // 第二个观察点 - 压铸车间视角（平滑过渡）
             {
-                position: new THREE.Vector3(center.x + radius * 0.3, center.y + radius * 0.4, center.z - radius * 0.4),
-                target: new THREE.Vector3(center.x + radius * 0.2, center.y, center.z - radius * 0.2),
-                duration: 2500,
+                position: new THREE.Vector3(center.x + radius * 0.2, center.y + radius * 0.5, center.z - radius * 0.8),
+                target: new THREE.Vector3(center.x + radius * 0.3, center.y, center.z - radius * 0.3),
+                duration: 4500,
             },
-            // 第三个观察点 - 设备区域视角
+            // 第三个观察点 - 设备区域视角（扩大范围）
             {
-                position: new THREE.Vector3(center.x + radius * 0.6, center.y + radius * 0.3, center.z + radius * 0.2),
-                target: new THREE.Vector3(center.x + radius * 0.3, center.y, center.z + radius * 0.1),
-                duration: 2500,
+                position: new THREE.Vector3(center.x + radius * 1.0, center.y + radius * 0.4, center.z + radius * 0.4),
+                target: new THREE.Vector3(center.x + radius * 0.4, center.y, center.z + radius * 0.2),
+                duration: 4500,
             },
-            // 第四个观察点 - 高空俯视视角
+            // 第四个观察点 - 高空俯视视角（降低高度，扩大范围）
             {
-                position: new THREE.Vector3(center.x, center.y + radius * 0.8, center.z + radius * 0.6),
+                position: new THREE.Vector3(center.x, center.y + radius * 1.2, center.z + radius * 1.0),
                 target: new THREE.Vector3(center.x, center.y, center.z),
-                duration: 3000,
+                duration: 5000,
             },
-            // 第五个观察点 - 机械臂区域视角
+            // 第五个观察点 - 机械臂区域视角（平滑过渡）
             {
-                position: new THREE.Vector3(center.x - radius * 0.4, center.y + radius * 0.3, center.z + radius * 0.4),
-                target: new THREE.Vector3(center.x - radius * 0.2, center.y, center.z + radius * 0.2),
-                duration: 2500,
+                position: new THREE.Vector3(center.x - radius * 0.6, center.y + radius * 0.4, center.z + radius * 0.8),
+                target: new THREE.Vector3(center.x - radius * 0.3, center.y, center.z + radius * 0.3),
+                duration: 4500,
             },
-            // 回到起始点
+            // 第六个观察点 - 侧视角度（新增平滑过渡点）
             {
-                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.3, center.z - radius * 0.8),
+                position: new THREE.Vector3(center.x - radius * 1.0, center.y + radius * 0.3, center.z + radius * 0.2),
+                target: new THREE.Vector3(center.x - radius * 0.2, center.y, center.z + radius * 0.1),
+                duration: 4500,
+            },
+            // 回到起始点（更平滑的回归）
+            {
+                position: new THREE.Vector3(center.x - radius * 1.2, center.y + radius * 0.4, center.z - radius * 1.2),
                 target: new THREE.Vector3(center.x, center.y, center.z),
-                duration: 3000,
+                duration: 5000,
             },
         ];
     }
@@ -1083,8 +1106,17 @@ string} name
         // 设置建筑透明
         this.setBuildingTransparentForRoaming();
 
-        // 开始漫游
-        this.moveToNextPathPoint();
+        // 立即切换到漫游起始点
+        const startPoint = this.roamingPath[0];
+        this.camera.position.copy(startPoint.position);
+        this.controls.target.copy(startPoint.target);
+
+        // 短暂延迟后开始漫游，让用户适应新的视角
+        setTimeout(() => {
+            // 从第二个路径点开始漫游（跳过起始点）
+            this.currentPathIndex = 1;
+            this.moveToNextPathPoint();
+        }, 500);
 
         console.log("开始场景漫游");
     }
@@ -1097,11 +1129,19 @@ string} name
 
         this.isRoaming = false;
 
-        // 停止当前动画
+        // 停止所有漫游相关的动画
         if (this.roamingTween) {
             this.roamingTween.stop();
             this.roamingTween = null;
         }
+
+        // 停止所有保存的漫游动画
+        this.roamingTweens.forEach(tween => {
+            if (tween) {
+                tween.stop();
+            }
+        });
+        this.roamingTweens = [];
 
         // 恢复控制器
         this.controls.enabled = true;
@@ -1109,18 +1149,14 @@ string} name
         // 恢复建筑透明度
         this.restoreBuildingForRoaming();
 
-        // 可选：回到原始位置
-        if (this.originalCameraPosition && this.originalControlsTarget) {
-            new TWEEN.Tween(this.camera.position).to(this.originalCameraPosition, 2000).start();
-
-            new TWEEN.Tween(this.controls.target).to(this.originalControlsTarget, 2000).start();
-        }
+        // 恢复到默认视角位置
+        this.handleControls();
 
         console.log("停止场景漫游");
     }
 
     /**
-     * 移动到下一个路径点
+     * 移动到下一个路径点 - 优化减少眩晕感
      */
     moveToNextPathPoint() {
         if (!this.isRoaming || this.currentPathIndex >= this.roamingPath.length) {
@@ -1130,26 +1166,32 @@ string} name
 
         const pathPoint = this.roamingPath[this.currentPathIndex];
 
-        // 创建相机位置动画
+        // 使用更平滑的缓动函数，减少突兀的加速减速
         this.roamingTween = new TWEEN.Tween(this.camera.position)
             .to(pathPoint.position, pathPoint.duration)
-            .easing(TWEEN.Easing.Quadratic.InOut)
+            .easing(TWEEN.Easing.Cubic.InOut) // 使用Cubic.InOut，更平滑的过渡
             .onComplete(() => {
                 // 移动到下一个点
                 this.currentPathIndex++;
                 if (this.isRoaming) {
-                    this.moveToNextPathPoint();
+                    // 添加短暂停顿，让用户有时间观察当前视角
+                    setTimeout(() => {
+                        this.moveToNextPathPoint();
+                    }, 1000); // 1秒停顿
                 }
             });
 
-        // 创建控制器目标点动画
-        new TWEEN.Tween(this.controls.target)
+        // 创建控制器目标点动画，使用相同的平滑缓动
+        const targetTween = new TWEEN.Tween(this.controls.target)
             .to(pathPoint.target, pathPoint.duration)
-            .easing(TWEEN.Easing.Quadratic.InOut)
-            .start();
+            .easing(TWEEN.Easing.Cubic.InOut);
 
-        // 开始相机动画
+        // 保存所有漫游动画的引用
+        this.roamingTweens = [this.roamingTween, targetTween];
+
+        // 开始所有动画
         this.roamingTween.start();
+        targetTween.start();
     }
 
     /**
@@ -1289,14 +1331,23 @@ string} name
         // 设置建筑透明
         this.setBuildingTransparentForRoaming();
 
-        // 开始平滑漫游
-        this.moveToNextSmoothPoint();
+        // 立即切换到漫游起始点
+        const startPoint = this.roamingPath[0];
+        this.camera.position.copy(startPoint.position);
+        this.controls.target.copy(startPoint.target);
+
+        // 短暂延迟后开始平滑漫游，让用户适应新的视角
+        setTimeout(() => {
+            // 从第二个路径点开始漫游（跳过起始点）
+            this.currentPathIndex = 1;
+            this.moveToNextSmoothPoint();
+        }, 500);
 
         console.log("开始平滑漫游");
     }
 
     /**
-     * 移动到下一个平滑路径点
+     * 移动到下一个平滑路径点 - 优化减少眩晕感
      */
     moveToNextSmoothPoint() {
         if (!this.isRoaming || this.currentPathIndex >= this.roamingPath.length) {
@@ -1314,18 +1365,24 @@ string} name
                 // 移动到下一个点
                 this.currentPathIndex++;
                 if (this.isRoaming) {
-                    this.moveToNextSmoothPoint();
+                    // 添加短暂停顿，让用户有时间观察当前视角
+                    setTimeout(() => {
+                        this.moveToNextSmoothPoint();
+                    }, 1000); // 1秒停顿
                 }
             });
 
         // 创建控制器目标点动画
-        new TWEEN.Tween(this.controls.target)
+        const targetTween = new TWEEN.Tween(this.controls.target)
             .to(pathPoint.target, pathPoint.duration)
-            .easing(TWEEN.Easing.Cubic.InOut)
-            .start();
+            .easing(TWEEN.Easing.Cubic.InOut);
 
-        // 开始相机动画
+        // 保存所有漫游动画的引用
+        this.roamingTweens = [this.roamingTween, targetTween];
+
+        // 开始所有动画
         this.roamingTween.start();
+        targetTween.start();
     }
 
     /**
@@ -1409,16 +1466,57 @@ string} name
     }
 
     /**
-     * 漫游开始时设置建筑透明
+     * 隐藏建筑外壳
+     * @param {number} duration 动画持续时间
      */
-    setBuildingTransparentForRoaming() {
-        this.setBuildingOpacity(this.roamingBuildingOpacity, 800);
+    hideBuildingShells(duration = 800) {
+        Object.values(this.buildingModels).forEach(building => {
+            building.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    // 使用淡出动画隐藏建筑
+                    new TWEEN.Tween(child.material)
+                        .to({ opacity: 0 }, duration)
+                        .easing(TWEEN.Easing.Quadratic.InOut)
+                        .onComplete(() => {
+                            child.visible = false;
+                        })
+                        .start();
+                }
+            });
+        });
     }
 
     /**
-     * 漫游结束时恢复建筑透明度
+     * 显示建筑外壳
+     * @param {number} duration 动画持续时间
+     */
+    showBuildingShells(duration = 800) {
+        Object.values(this.buildingModels).forEach(building => {
+            building.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    // 先设置为可见
+                    child.visible = true;
+                    // 使用淡入动画显示建筑
+                    new TWEEN.Tween(child.material)
+                        .to({ opacity: 1 }, duration)
+                        .easing(TWEEN.Easing.Quadratic.InOut)
+                        .start();
+                }
+            });
+        });
+    }
+
+    /**
+     * 漫游开始时隐藏建筑外壳
+     */
+    setBuildingTransparentForRoaming() {
+        this.hideBuildingShells(800);
+    }
+
+    /**
+     * 漫游结束时显示建筑外壳
      */
     restoreBuildingForRoaming() {
-        this.restoreBuildingOpacity(800);
+        this.showBuildingShells(800);
     }
 }
