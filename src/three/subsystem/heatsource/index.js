@@ -76,6 +76,7 @@ export class HeatSource extends Subsystem {
         this.raycastEvents = [];
         this.tweenCode = null;
         this.roamingTweens = []; // 存储所有漫游相关的动画
+        this.deviceOverlays = {}; // 存储设备透明罩子
         this.shaderColor = {
             wall: new THREE.Color(0.4431, 0.4784, 0.502),
             shan: new THREE.Color(0.9569, 0.9843, 0.5882),
@@ -694,6 +695,7 @@ string} name
     changeArmAction(id, status) {
         // 切换机械臂的动作
         if (this.jixiebi[id] && this.jixiebi[id].action) {
+            // this.jixiebi[id].model.scale.set(100, 100, 100);
             status ? this.jixiebi[id].action.play() : this.jixiebi[id].action.stop();
         }
     }
@@ -703,27 +705,69 @@ string} name
         let color = this.statusColor[status];
         this.createDom(id);
         if (this.modelsEquip[id]) {
-            this.modelsEquip[id].traverse(child => {
-                if (child instanceof THREE.Mesh) {
-                    // 确保每次调用时都重新应用材质
-                    if (child.stateMaterial) {
-                        child.material = child.stateMaterial.clone();
-                    } else {
-                        child.stateMaterial = child.material.clone();
-                    }
+            // 移除旧的透明罩子
+            this.removeDeviceOverlay(id);
+            
+            // 创建新的透明罩子
+            this.createDeviceOverlay(id, color);
+        }
+    }
 
-                    child.material.onBeforeCompile = shader => {
-                        shaderModify(shader, {
-                            shader: "pumpModify",
-                            color: new THREE.Color(color),
-                            shaderName: "base",
-                        });
-                    };
+    /**
+     * 为设备创建透明罩子
+     * @param {string} deviceId 设备ID
+     * @param {string} color 颜色
+     */
+    createDeviceOverlay(deviceId, color) {
+        const device = this.modelsEquip[deviceId];
+        if (!device) return;
 
-                    // 强制更新材质
-                    child.material.needsUpdate = true;
-                }
-            });
+        // 计算设备包围盒
+        const box = new THREE.Box3().setFromObject(device);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        // 创建包围盒几何体，稍微放大一点
+        const geometry = new THREE.BoxGeometry(
+            size.x * 1.1, 
+            size.y * 1.1, 
+            size.z * 1.1
+        );
+
+        // 创建透明材质
+        const material = new THREE.MeshBasicMaterial({
+            color: new THREE.Color(color),
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.DoubleSide,
+            depthWrite: false, // 避免深度写入问题
+        });
+
+        // 创建透明罩子
+        const overlay = new THREE.Mesh(geometry, material);
+        overlay.position.copy(center);
+        overlay.name = `deviceOverlay_${deviceId}`;
+        
+        // 添加到场景
+        this.add(overlay);
+        
+        // 保存引用以便后续移除
+        if (!this.deviceOverlays) {
+            this.deviceOverlays = {};
+        }
+        this.deviceOverlays[deviceId] = overlay;
+    }
+
+    /**
+     * 移除设备的透明罩子
+     * @param {string} deviceId 设备ID
+     */
+    removeDeviceOverlay(deviceId) {
+        if (this.deviceOverlays && this.deviceOverlays[deviceId]) {
+            this.remove(this.deviceOverlays[deviceId]);
+            this.deviceOverlays[deviceId].geometry.dispose();
+            this.deviceOverlays[deviceId].material.dispose();
+            delete this.deviceOverlays[deviceId];
         }
     }
 
@@ -889,6 +933,14 @@ string} name
         this.originalBuildingOpacities = [];
         this.originalBuildingTransparent = [];
 
+        // 清理设备透明罩子
+        if (this.deviceOverlays) {
+            Object.keys(this.deviceOverlays).forEach(deviceId => {
+                this.removeDeviceOverlay(deviceId);
+            });
+            this.deviceOverlays = {};
+        }
+
         this.flowLights.length = 0;
         this.bloomLights.length = 0;
         this.postprocessing.bloomEffect.intensity = 1;
@@ -1029,53 +1081,65 @@ string} name
 
         const { center, radius } = getBoxAndSphere(this.ground).sphere;
 
-        // 扩大漫游范围，减少高度变化，增加过渡时间
+        // 沿着厂房周围漫游，扩大范围，围绕厂区外围
         this.roamingPath = [
-            // 起始点 - 厂区入口视角（扩大范围，降低高度变化）
+            // 起始点 - 厂区入口视角（扩大范围到外围）
             {
-                position: new THREE.Vector3(center.x - radius * 1.2, center.y + radius * 0.4, center.z - radius * 1.2),
-                target: new THREE.Vector3(center.x, center.y, center.z),
-                duration: 5000, // 增加过渡时间
-            },
-            // 第一个观察点 - 机加车间视角（减少高度变化）
-            {
-                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.5, center.z - radius * 0.6),
-                target: new THREE.Vector3(center.x - radius * 0.3, center.y, center.z - radius * 0.3),
-                duration: 4500,
-            },
-            // 第二个观察点 - 压铸车间视角（平滑过渡）
-            {
-                position: new THREE.Vector3(center.x + radius * 0.2, center.y + radius * 0.5, center.z - radius * 0.8),
-                target: new THREE.Vector3(center.x + radius * 0.3, center.y, center.z - radius * 0.3),
-                duration: 4500,
-            },
-            // 第三个观察点 - 设备区域视角（扩大范围）
-            {
-                position: new THREE.Vector3(center.x + radius * 1.0, center.y + radius * 0.4, center.z + radius * 0.4),
-                target: new THREE.Vector3(center.x + radius * 0.4, center.y, center.z + radius * 0.2),
-                duration: 4500,
-            },
-            // 第四个观察点 - 高空俯视视角（降低高度，扩大范围）
-            {
-                position: new THREE.Vector3(center.x, center.y + radius * 1.2, center.z + radius * 1.0),
+                position: new THREE.Vector3(center.x - radius * 1.8, center.y + radius * 0.5, center.z - radius * 1.8),
                 target: new THREE.Vector3(center.x, center.y, center.z),
                 duration: 5000,
             },
-            // 第五个观察点 - 机械臂区域视角（平滑过渡）
+            // 第一个观察点 - 机加车间外围视角
             {
-                position: new THREE.Vector3(center.x - radius * 0.6, center.y + radius * 0.4, center.z + radius * 0.8),
-                target: new THREE.Vector3(center.x - radius * 0.3, center.y, center.z + radius * 0.3),
+                position: new THREE.Vector3(center.x - radius * 1.5, center.y + radius * 0.6, center.z - radius * 0.8),
+                target: new THREE.Vector3(center.x - radius * 0.5, center.y, center.z - radius * 0.5),
                 duration: 4500,
             },
-            // 第六个观察点 - 侧视角度（新增平滑过渡点）
+            // 第二个观察点 - 压铸车间外围视角
             {
-                position: new THREE.Vector3(center.x - radius * 1.0, center.y + radius * 0.3, center.z + radius * 0.2),
-                target: new THREE.Vector3(center.x - radius * 0.2, center.y, center.z + radius * 0.1),
+                position: new THREE.Vector3(center.x + radius * 0.5, center.y + radius * 0.6, center.z - radius * 1.5),
+                target: new THREE.Vector3(center.x + radius * 0.5, center.y, center.z - radius * 0.5),
+                duration: 4500,
+            },
+            // 第三个观察点 - 设备区域外围视角
+            {
+                position: new THREE.Vector3(center.x + radius * 1.5, center.y + radius * 0.5, center.z + radius * 0.8),
+                target: new THREE.Vector3(center.x + radius * 0.5, center.y, center.z + radius * 0.3),
+                duration: 4500,
+            },
+            // 第四个观察点 - 高空俯视视角（扩大范围）
+            {
+                position: new THREE.Vector3(center.x, center.y + radius * 1.5, center.z + radius * 1.5),
+                target: new THREE.Vector3(center.x, center.y, center.z),
+                duration: 5000,
+            },
+            // 第五个观察点 - 机械臂区域外围视角
+            {
+                position: new THREE.Vector3(center.x - radius * 1.0, center.y + radius * 0.5, center.z + radius * 1.5),
+                target: new THREE.Vector3(center.x - radius * 0.5, center.y, center.z + radius * 0.5),
+                duration: 4500,
+            },
+            // 第六个观察点 - 侧视角度外围
+            {
+                position: new THREE.Vector3(center.x - radius * 1.5, center.y + radius * 0.4, center.z + radius * 0.5),
+                target: new THREE.Vector3(center.x - radius * 0.3, center.y, center.z + radius * 0.2),
+                duration: 4500,
+            },
+            // 第七个观察点 - 厂房后方外围视角
+            {
+                position: new THREE.Vector3(center.x - radius * 0.8, center.y + radius * 0.4, center.z + radius * 1.8),
+                target: new THREE.Vector3(center.x, center.y, center.z),
+                duration: 4500,
+            },
+            // 第八个观察点 - 厂房右侧外围视角
+            {
+                position: new THREE.Vector3(center.x + radius * 1.8, center.y + radius * 0.4, center.z - radius * 0.5),
+                target: new THREE.Vector3(center.x + radius * 0.3, center.y, center.z),
                 duration: 4500,
             },
             // 回到起始点（更平滑的回归）
             {
-                position: new THREE.Vector3(center.x - radius * 1.2, center.y + radius * 0.4, center.z - radius * 1.2),
+                position: new THREE.Vector3(center.x - radius * 1.8, center.y + radius * 0.5, center.z - radius * 1.8),
                 target: new THREE.Vector3(center.x, center.y, center.z),
                 duration: 5000,
             },
@@ -1166,9 +1230,13 @@ string} name
 
         const pathPoint = this.roamingPath[this.currentPathIndex];
 
+        // 根据当前相机位置到目标位置的距离动态计算时间
+        const distance = this.camera.position.distanceTo(pathPoint.position);
+        const dynamicDuration = Math.max(1000, distance * 50); // 最小1秒，每单位距离50ms
+
         // 使用更平滑的缓动函数，减少突兀的加速减速
         this.roamingTween = new TWEEN.Tween(this.camera.position)
-            .to(pathPoint.position, pathPoint.duration)
+            .to(pathPoint.position, dynamicDuration)
             .easing(TWEEN.Easing.Cubic.InOut) // 使用Cubic.InOut，更平滑的过渡
             .onComplete(() => {
                 // 移动到下一个点
@@ -1181,9 +1249,9 @@ string} name
                 }
             });
 
-        // 创建控制器目标点动画，使用相同的平滑缓动
+        // 创建控制器目标点动画，使用相同的动态时间
         const targetTween = new TWEEN.Tween(this.controls.target)
-            .to(pathPoint.target, pathPoint.duration)
+            .to(pathPoint.target, dynamicDuration)
             .easing(TWEEN.Easing.Cubic.InOut);
 
         // 保存所有漫游动画的引用
@@ -1301,12 +1369,24 @@ string} name
         // 生成路径点
         const points = curve.getPoints(50);
 
-        // 转换为漫游路径格式
-        this.roamingPath = points.map((point, index) => ({
-            position: point,
-            target: new THREE.Vector3(center.x, center.y, center.z),
-            duration: 1000 + Math.random() * 500, // 随机化持续时间
-        }));
+        // 转换为漫游路径格式，根据距离动态计算时间
+        this.roamingPath = points.map((point, index) => {
+            let duration = 2000; // 默认持续时间
+            
+            // 如果不是第一个点，根据与前一个点的距离计算时间
+            if (index > 0) {
+                const prevPoint = points[index - 1];
+                const distance = point.distanceTo(prevPoint);
+                // 根据距离计算时间，保持匀速（每单位距离对应固定时间）
+                duration = Math.max(1000, distance * 50); // 最小1秒，每单位距离50ms
+            }
+            
+            return {
+                position: point,
+                target: new THREE.Vector3(center.x, center.y, center.z),
+                duration: duration,
+            };
+        });
     }
 
     /**
@@ -1357,9 +1437,13 @@ string} name
 
         const pathPoint = this.roamingPath[this.currentPathIndex];
 
+        // 根据当前相机位置到目标位置的距离动态计算时间
+        const distance = this.camera.position.distanceTo(pathPoint.position);
+        const dynamicDuration = Math.max(1000, distance * 50); // 最小1秒，每单位距离50ms
+
         // 创建相机位置动画，使用更平滑的缓动
         this.roamingTween = new TWEEN.Tween(this.camera.position)
-            .to(pathPoint.position, pathPoint.duration)
+            .to(pathPoint.position, dynamicDuration)
             .easing(TWEEN.Easing.Cubic.InOut)
             .onComplete(() => {
                 // 移动到下一个点
@@ -1372,9 +1456,9 @@ string} name
                 }
             });
 
-        // 创建控制器目标点动画
+        // 创建控制器目标点动画，使用相同的动态时间
         const targetTween = new TWEEN.Tween(this.controls.target)
-            .to(pathPoint.target, pathPoint.duration)
+            .to(pathPoint.target, dynamicDuration)
             .easing(TWEEN.Easing.Cubic.InOut);
 
         // 保存所有漫游动画的引用
