@@ -24,4 +24,9 @@ export const modelsList = [
         path: "./models/other.glb",
         type: ".glb",
     },
+    {
+        name: "line",
+        path: "./models/line.glb",
+        type: ".glb",
+    },
 ];
