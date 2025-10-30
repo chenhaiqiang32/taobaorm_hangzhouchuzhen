@@ -10,6 +10,11 @@ export const modelsList = [
         type: ".glb",
     },
     {
+        name: "机器人",
+        path: "./models/机器人.glb",
+        type: ".glb",
+    },
+    {
         name: "device",
         path: "./models/device.glb",
         type: ".glb",
