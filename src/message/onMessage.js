@@ -44,6 +44,10 @@ export const openMessage = Core3D => {
                     event.data.param ? Core3D.heatSource.startRoaming() : Core3D.heatSource.stopRoaming();
                     break;
                 }
+                case "moveCar": {
+                    Core3D.heatSource.moveCar(event.data.param);
+                    break;
+                }
             }
         }
     };

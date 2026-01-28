@@ -1,3 +1,5 @@
+export const ROBOT_MODEL_NAME = "机器人";
+
 export const modelsList = [
     {
         name: "机械臂",
@@ -10,7 +12,7 @@ export const modelsList = [
         type: ".glb",
     },
     {
-        name: "机器人",
+        name: ROBOT_MODEL_NAME,
         path: "./models/机器人.glb",
         type: ".glb",
     },

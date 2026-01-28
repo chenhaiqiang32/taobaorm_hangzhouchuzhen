@@ -197,3 +197,38 @@ body {
     padding: 4px 12px;
     cursor: pointer;
 }
+
+/* 机器人小车标签样式 - 全新的独立样式 */
+.robot-car-label-container {
+    position: relative;
+    display: inline-block;
+    transform-style: preserve-3d;
+}
+
+.robot-car-label-text {
+    /* display: inline-block;
+    min-width: 120px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 600;
+    font-size: 14px; */
+    font-size: 4px;
+    color: #ffffff;
+    /* text-align: center;
+    line-height: 1.4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 
+                0 0 20px rgba(102, 126, 234, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease; */
+}
+
+.robot-car-label-text:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 
+                0 0 30px rgba(102, 126, 234, 0.7);
+    transform: scale(1.05);
+}

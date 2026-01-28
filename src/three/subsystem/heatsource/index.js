@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as TWEEN from "three/examples/jsm/libs/tween.module";
 import { Subsystem } from "../Subsystem";
 import { dracoLoaderGlb, loadOBJ } from "../../loader";
-import { modelsList } from "@/assets/models";
+import { modelsList, ROBOT_MODEL_NAME } from "@/assets/models";
 import { Core3D } from "../..";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -19,6 +19,7 @@ import BoxModel from "../../../lib/boxModel";
 import { fresnelColorBlue } from "../../../shader/paramaters";
 import MemoryManager from "../../../lib/memoryManager";
 import { createCSS2DObject } from "./../../../lib/CSSObject";
+import { CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { openWebsocket } from "../../../message/websocket";
 import { TweenControls } from "../../../lib/tweenControls";
@@ -67,7 +68,14 @@ export class HeatSource extends Subsystem {
         this.postprocessing = core.postprocessing;
         this.elapsedTime = 0;
         this.labelGroup = new THREE.Group();
+        this.add(this.labelGroup);
         this.canAnimate = true; // 是否可以动画
+        this.robotCar = null; // 机器人模型
+        this.robotCarLabel = null; // 机器人顶部标签
+        this.robotLabelTextEl = null;
+        this.pendingCarMove = null;
+        this.activeCarTween = null;
+        this.activeCarRotationTween = null;
 
         /** @type {FlowLight[]} */
         this.flowLights = [];
@@ -630,6 +638,9 @@ string} name
                 }
             });
         }
+        if (name === ROBOT_MODEL_NAME) {
+            this.setupRobotCar(gltf.scene);
+        }
         if (name === "地面") {
             gltf.scene.traverse(child => {
                 if (child instanceof THREE.Mesh) {
@@ -659,6 +670,169 @@ string} name
         processingAnimations(gltf, this);
         this._add(gltf.scene);
     };
+    setupRobotCar(robotScene) {
+        this.robotCar = robotScene;
+        this.robotCar.name = "robotCar";
+        this.robotCar.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                child.material = child.material?.clone?.() ?? child.material;
+            }
+        });
+
+        // 计算小车包围盒（此时小车还未添加到场景，所以是局部坐标系）
+        const boundingBox = new THREE.Box3().setFromObject(this.robotCar);
+        const size = boundingBox.getSize(new THREE.Vector3());
+        const center = boundingBox.getCenter(new THREE.Vector3());
+        const max = boundingBox.max;
+        
+        // 计算标签位置：在小车顶部上方
+        // 标签是相对于小车局部坐标系的
+        // 从包围盒中心到顶部的距离 = max.y - center.y
+        // 降低标签高度，使其更接近小车顶部
+        const labelHeight = (max.y - center.y) * 1+1; // 在小车顶部上方30%的位置，降低高度
+
+        if (!this.robotCarLabel) {
+            // 创建独立的机器人标签 DOM 元素，使用全新的样式
+            const robotLabelContainer = document.createElement("div");
+            robotLabelContainer.className = "robot-car-label-container";
+            
+            const robotLabelText = document.createElement("div");
+            robotLabelText.className = "robot-car-label-text";
+            robotLabelText.textContent = "";
+            
+            robotLabelContainer.appendChild(robotLabelText);
+            
+            // 创建 CSS3DObject
+            const css3dObject = new CSS3DObject(robotLabelContainer);
+            css3dObject.scale.set(0.1, 0.1, 0.1);
+            
+            // 创建 Object3D 包装器
+            this.robotCarLabel = new THREE.Object3D();
+            this.robotCarLabel.name = "robotCarLabel";
+            this.robotCarLabel.add(css3dObject);
+            
+            // 保存 DOM 元素引用
+            this.robotCarLabel.domElement = robotLabelContainer;
+            this.robotLabelTextEl = robotLabelText;
+            
+            // 初始状态：没有数据时隐藏标签（同时控制 THREE.Object3D 和 DOM 元素）
+            this.robotCarLabel.visible = false;
+            robotLabelContainer.style.display = "none";
+        }
+
+        if (this.robotCarLabel) {
+            // 标签位置相对于小车局部坐标系
+            // 如果小车中心不在原点，需要加上center的偏移，使标签在小车正上方
+            this.robotCarLabel.position.set(center.x, labelHeight, center.z);
+            this.robotCar.add(this.robotCarLabel);
+        }
+
+        if (this.pendingCarMove) {
+            const cache = {
+                info: this.pendingCarMove.info,
+                to: {
+                    x: this.pendingCarMove.to?.x || 0,
+                    y: this.pendingCarMove.to?.y || 0,
+                },
+            };
+            this.pendingCarMove = null;
+            this.moveCar(cache);
+        }
+    }
+    moveCar(param = {}) {
+        const { to = {}, info = "" } = param;
+        const deltaX = Number(to.x) || 0;
+        const deltaZ = Number(to.y) || 0;
+
+        if (!this.robotCar) {
+            this.pendingCarMove = { to: { x: deltaX, y: deltaZ }, info };
+            return;
+        }
+
+        const target = {
+            x: this.robotCar.position.x + deltaX,
+            y: this.robotCar.position.y,
+            z: this.robotCar.position.z + deltaZ,
+        };
+
+        // 计算目标旋转角度（朝向目标方向）
+        const directionX = target.x - this.robotCar.position.x;
+        const directionZ = target.z - this.robotCar.position.z;
+        const targetRotationY = Math.atan2(directionX, directionZ);
+
+        if (this.activeCarTween) {
+            this.activeCarTween.stop();
+        }
+        if (this.activeCarRotationTween) {
+            this.activeCarRotationTween.stop();
+        }
+
+        // 创建位置动画
+        const positionTween = new TWEEN.Tween(this.robotCar.position)
+            .to(target, 2000)
+            .easing(TWEEN.Easing.Quadratic.InOut)
+            .onComplete(() => {
+                this.activeCarTween = null;
+            });
+
+        // 创建旋转动画（如果有子模型需要旋转）
+        if (this.robotCar.children[0]) {
+            const currentRotationY = this.robotCar.children[0].rotation.y;
+            // 计算最短旋转角度
+            let rotationDiff = targetRotationY - currentRotationY;
+            // 标准化到 [-π, π] 范围
+            while (rotationDiff > Math.PI) rotationDiff -= 2 * Math.PI;
+            while (rotationDiff < -Math.PI) rotationDiff += 2 * Math.PI;
+            
+            const targetRotation = {
+                y: currentRotationY + rotationDiff
+            };
+
+            const rotationTween = new TWEEN.Tween(this.robotCar.children[0].rotation)
+                .to(targetRotation, 2000)
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .onComplete(() => {
+                    this.activeCarRotationTween = null;
+                });
+            
+            this.activeCarRotationTween = rotationTween;
+            rotationTween.start();
+        }
+
+        this.activeCarTween = positionTween;
+        positionTween.start();
+        this.updateRobotLabel(info);
+    }
+    updateRobotLabel(info) {
+        if (!this.robotCarLabel) {
+            return;
+        }
+        if (!this.robotLabelTextEl) {
+            this.robotLabelTextEl = this.robotCarLabel.domElement?.querySelector(".robot-car-label-text") ?? null;
+        }
+        
+        // 严格检查是否有有效数据：必须是字符串类型且去除空白后长度大于0
+        let hasInfo = false;
+        if (info !== null && info !== undefined) {
+            const infoStr = String(info).trim();
+            hasInfo = infoStr.length > 0;
+        }
+        
+        // 同时控制 THREE.Object3D 和 DOM 元素的显示/隐藏
+        this.robotCarLabel.visible = hasInfo;
+        
+        // 直接控制 DOM 元素的显示/隐藏，确保 CSS3DObject 也能正确隐藏
+        if (this.robotCarLabel.domElement) {
+            this.robotCarLabel.domElement.style.display = hasInfo ? "block" : "none";
+        }
+        
+        // 更新文本内容
+        if (this.robotLabelTextEl) {
+            this.robotLabelTextEl.textContent = hasInfo ? ("状态：" + info) : "";
+        }
+    }
     init(_array) {
         // 初始化前端发送数据
         _array.forEach(child => {
@@ -940,6 +1114,18 @@ string} name
             });
             this.deviceOverlays = {};
         }
+
+        if (this.activeCarTween) {
+            this.activeCarTween.stop();
+            this.activeCarTween = null;
+        }
+        this.pendingCarMove = null;
+        if (this.robotCarLabel) {
+            this.robotCarLabel.removeFromParent();
+        }
+        this.robotCarLabel = null;
+        this.robotLabelTextEl = null;
+        this.robotCar = null;
 
         this.flowLights.length = 0;
         this.bloomLights.length = 0;
